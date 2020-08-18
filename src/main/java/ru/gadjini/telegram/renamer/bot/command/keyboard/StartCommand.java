@@ -12,7 +12,7 @@ import ru.gadjini.telegram.renamer.model.Any2AnyFile;
 import ru.gadjini.telegram.renamer.model.TgMessage;
 import ru.gadjini.telegram.renamer.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.renamer.model.bot.api.object.Message;
-import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboardMarkup;
+import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboard;
 import ru.gadjini.telegram.renamer.service.FileService;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
 import ru.gadjini.telegram.renamer.service.UserService;
@@ -112,28 +112,26 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     @Override
     public void restore(TgMessage message) {
-        RenameState renameState = commandStateService.getState(message.getChatId(), CommandNames.START_COMMAND, true, RenameState.class);
+        RenameState renameState = commandStateService.getState(message.getChatId(), CommandNames.START_COMMAND, false, RenameState.class);
         Locale locale = userService.getLocaleOrDefault(message.getUser().getId());
         String msg = localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale);
-        if (renameState.getFile() != null) {
+        if (renameState != null) {
             msg = localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale);
         }
-        messageService.sendMessage(new HtmlMessage(message.getChatId(), msg)
-                .setReplyMarkup(replyKeyboardService.goBack(message.getChatId(), locale)));
+        messageService.sendMessage(new HtmlMessage(message.getChatId(), msg).setReplyMarkup(replyKeyboardService.removeKeyboard(message.getChatId())));
     }
 
     @Override
-    public ReplyKeyboardMarkup getKeyboard(long chatId) {
-        Locale locale = userService.getLocaleOrDefault((int) chatId);
-        return replyKeyboardService.goBack(chatId, locale);
+    public ReplyKeyboard getKeyboard(long chatId) {
+        return replyKeyboardService.removeKeyboard(chatId);
     }
 
     @Override
     public String getMessage(long chatId) {
-        RenameState renameState = commandStateService.getState(chatId, CommandNames.START_COMMAND, true, RenameState.class);
+        RenameState renameState = commandStateService.getState(chatId, CommandNames.START_COMMAND, false, RenameState.class);
         Locale locale = userService.getLocaleOrDefault((int) chatId);
         String msg = localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale);
-        if (renameState.getFile() != null) {
+        if (renameState == null) {
             msg = localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale);
         }
 

@@ -86,7 +86,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
             CommandNavigator.SilentPop silentPop = commandNavigator.silentPop(message.getChatId());
             messageService.sendMessage(new HtmlMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_ADDED, locale) +
                     "\n\n" + silentPop.getMessage())
-                    .setReplyMarkup(silentPop.getReplyKeyboardMarkup()));
+                    .setReplyMarkup(silentPop.getReplyKeyboard()));
         }
     }
 

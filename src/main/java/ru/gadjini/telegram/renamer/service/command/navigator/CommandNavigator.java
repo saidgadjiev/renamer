@@ -10,7 +10,7 @@ import ru.gadjini.telegram.renamer.bot.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.dao.command.navigator.keyboard.CommandNavigatorDao;
 import ru.gadjini.telegram.renamer.model.TgMessage;
-import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboardMarkup;
+import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboard;
 import ru.gadjini.telegram.renamer.utils.ReflectionUtils;
 
 import java.util.Collection;
@@ -131,12 +131,12 @@ public class CommandNavigator {
 
     public class SilentPop {
 
-        private ReplyKeyboardMarkup replyKeyboardMarkup;
+        private ReplyKeyboard replyKeyboard;
 
         private String message;
 
-        public SilentPop(ReplyKeyboardMarkup replyKeyboardMarkup, String message) {
-            this.replyKeyboardMarkup = replyKeyboardMarkup;
+        public SilentPop(ReplyKeyboard replyKeyboard, String message) {
+            this.replyKeyboard = replyKeyboard;
             this.message = message;
         }
 
@@ -144,8 +144,8 @@ public class CommandNavigator {
             return message;
         }
 
-        public ReplyKeyboardMarkup getReplyKeyboardMarkup() {
-            return replyKeyboardMarkup;
+        public ReplyKeyboard getReplyKeyboard() {
+            return replyKeyboard;
         }
     }
 }
