@@ -131,7 +131,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         RenameState renameState = commandStateService.getState(chatId, CommandNames.START_COMMAND, false, RenameState.class);
         Locale locale = userService.getLocaleOrDefault((int) chatId);
         String msg = localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale);
-        if (renameState == null) {
+        if (renameState != null) {
             msg = localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale);
         }
 
