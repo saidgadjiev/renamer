@@ -1,1 +1,1 @@
-# any2any-bot
+# renamer-bot

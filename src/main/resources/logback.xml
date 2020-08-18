@@ -2,10 +2,10 @@
 <configuration>
 
     <appender name="TIME_BASED_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/any2pdf.log</file>
+        <file>logs/renamer.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>logs/any2pdf.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/renamer.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
 
