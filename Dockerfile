@@ -73,12 +73,10 @@ RUN apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y && rm -rf 
 
 USER bot
 
-COPY ./api.json .
-COPY ./license/license-19.lic ./license/
 COPY ./target/app.jar .
 
 
 EXPOSE 8080
 ENTRYPOINT ["java"]
-CMD ["-jar", "app.jar"]
-#CMD ["-jar", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "app.jar"]
+#CMD ["-jar", "app.jar"]
+CMD ["-jar", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "app.jar"]

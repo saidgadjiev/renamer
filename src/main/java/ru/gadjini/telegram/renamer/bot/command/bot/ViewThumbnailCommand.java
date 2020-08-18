@@ -6,11 +6,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import ru.gadjini.telegram.renamer.bot.command.api.BotCommand;
-import ru.gadjini.telegram.renamer.bot.command.api.NavigableBotCommand;
-import ru.gadjini.telegram.renamer.bot.command.keyboard.rename.RenameState;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
-import ru.gadjini.telegram.renamer.domain.HasThumb;
 import ru.gadjini.telegram.renamer.io.SmartTempFile;
 import ru.gadjini.telegram.renamer.model.Any2AnyFile;
 import ru.gadjini.telegram.renamer.model.SendFileResult;
@@ -20,7 +17,6 @@ import ru.gadjini.telegram.renamer.model.bot.api.object.Message;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
 import ru.gadjini.telegram.renamer.service.UserService;
 import ru.gadjini.telegram.renamer.service.command.CommandStateService;
-import ru.gadjini.telegram.renamer.service.command.navigator.CommandNavigator;
 import ru.gadjini.telegram.renamer.service.message.MediaMessageService;
 import ru.gadjini.telegram.renamer.service.message.MessageService;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
@@ -40,8 +36,6 @@ public class ViewThumbnailCommand implements BotCommand {
 
     private ThumbService thumbService;
 
-    private CommandNavigator commandNavigator;
-
     private CommandStateService commandStateService;
 
     private ThreadPoolTaskExecutor executor;
@@ -60,39 +54,23 @@ public class ViewThumbnailCommand implements BotCommand {
         this.executor = executor;
     }
 
-    @Autowired
-    public void setCommandNavigator(CommandNavigator commandNavigator) {
-        this.commandNavigator = commandNavigator;
-    }
-
     @Override
     public void processMessage(Message message) {
-        String currentCommandName = getCurrentCommandName(message.getChatId());
-        if (StringUtils.isNotBlank(currentCommandName)) {
-            HasThumb state = getState(message.getChatId(), currentCommandName);
-
-            if (state != null) {
-                Any2AnyFile thumbnail = state.getThumb();
-                if (thumbnail != null) {
-                    if (StringUtils.isNotBlank(thumbnail.getCachedFileId())) {
-                        mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), thumbnail.getCachedFileId()));
-                    } else {
-                        executor.execute(() -> {
-                            SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileName(), thumbnail.getMimeType());
-                            try {
-                                SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), tempFile.getFile()));
-                                thumbnail.setCachedFileId(sendFileResult.getFileId());
-                                commandStateService.setState(message.getChatId(), currentCommandName, state);
-                            } finally {
-                                tempFile.smartDelete();
-                            }
-                        });
-                    }
-                } else {
-                    thumbNotFound(message);
-                }
+        Any2AnyFile thumbnail = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, Any2AnyFile.class);
+        if (thumbnail != null) {
+            if (StringUtils.isNotBlank(thumbnail.getCachedFileId())) {
+                mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), thumbnail.getCachedFileId()));
             } else {
-                thumbNotFound(message);
+                executor.execute(() -> {
+                    SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileName(), thumbnail.getMimeType());
+                    try {
+                        SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), tempFile.getFile()));
+                        thumbnail.setCachedFileId(sendFileResult.getFileId());
+                        commandStateService.setState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, thumbnail);
+                    } finally {
+                        tempFile.smartDelete();
+                    }
+                });
             }
         } else {
             thumbNotFound(message);
@@ -107,23 +85,5 @@ public class ViewThumbnailCommand implements BotCommand {
     private void thumbNotFound(Message message) {
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
         messageService.sendMessage(new SendMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_NOT_FOUND, locale)));
-    }
-
-    private String getCurrentCommandName(long chatId) {
-        NavigableBotCommand currentCommand = commandNavigator.getCurrentCommand(chatId);
-
-        if (currentCommand != null) {
-            return currentCommand.getHistoryName();
-        }
-
-        return null;
-    }
-
-    private HasThumb getState(long chatId, String commandName) {
-        if (commandName.equals(CommandNames.RENAME_COMMAND_NAME)) {
-            return commandStateService.getState(chatId, commandName, false, RenameState.class);
-        }
-
-        return null;
     }
 }

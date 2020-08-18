@@ -10,6 +10,4 @@ public interface MyBotCommand {
     default boolean accept(Message message) {
         return message.hasText();
     }
-
-    default void cancel(long chatId, String queryId) {}
 }

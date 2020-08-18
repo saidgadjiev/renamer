@@ -6,10 +6,9 @@ import org.springframework.stereotype.Component;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.domain.CreateOrUpdateResult;
-import ru.gadjini.telegram.renamer.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.renamer.model.TgMessage;
+import ru.gadjini.telegram.renamer.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.renamer.model.bot.api.object.Update;
-import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboard;
 import ru.gadjini.telegram.renamer.service.CommandMessageBuilder;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
 import ru.gadjini.telegram.renamer.service.UserService;
@@ -78,10 +77,9 @@ public class StartCommandFilter extends BaseBotFilter {
             String text = localisationService.getMessage(MessagesProperties.MESSAGE_WELCOME,
                     new Object[]{commandMessageBuilder.getCommandsInfo(createOrUpdateResult.getUser().getLocale())},
                     createOrUpdateResult.getUser().getLocale());
-            ReplyKeyboard mainMenu = replyKeyboardService.getMainMenu(message.getChatId(), createOrUpdateResult.getUser().getLocale());
             messageService.sendMessage(
                     new HtmlMessage(message.getChatId(), text)
-                            .setReplyMarkup(mainMenu)
+                            .setReplyMarkup(replyKeyboardService.removeKeyboard(message.getChatId()))
             );
 
             commandNavigator.setCurrentCommand(message.getChatId(), CommandNames.START_COMMAND);

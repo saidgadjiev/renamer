@@ -7,12 +7,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.gadjini.telegram.renamer.bot.command.keyboard.rename.RenameState;
+import ru.gadjini.telegram.renamer.bot.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.domain.TgFile;
 import ru.gadjini.telegram.renamer.io.SmartTempFile;
+import ru.gadjini.telegram.renamer.model.Any2AnyFile;
 import ru.gadjini.telegram.renamer.model.bot.api.method.send.SendDocument;
 import ru.gadjini.telegram.renamer.model.bot.api.method.send.SendMessage;
 import ru.gadjini.telegram.renamer.model.bot.api.method.updatemessages.EditMessageText;
@@ -20,19 +21,19 @@ import ru.gadjini.telegram.renamer.model.bot.api.object.AnswerCallbackQuery;
 import ru.gadjini.telegram.renamer.model.bot.api.object.Message;
 import ru.gadjini.telegram.renamer.model.bot.api.object.Progress;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
-import ru.gadjini.telegram.renamer.service.progress.ProgressManager;
 import ru.gadjini.telegram.renamer.service.TempFileService;
 import ru.gadjini.telegram.renamer.service.UserService;
 import ru.gadjini.telegram.renamer.service.command.CommandStateService;
 import ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService;
-import ru.gadjini.telegram.renamer.service.format.Format;
-import ru.gadjini.telegram.renamer.service.format.FormatService;
 import ru.gadjini.telegram.renamer.service.file.FileManager;
 import ru.gadjini.telegram.renamer.service.file.FileWorkObject;
+import ru.gadjini.telegram.renamer.service.format.Format;
+import ru.gadjini.telegram.renamer.service.format.FormatService;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
 import ru.gadjini.telegram.renamer.service.message.MediaMessageService;
 import ru.gadjini.telegram.renamer.service.message.MessageService;
 import ru.gadjini.telegram.renamer.service.progress.Lang;
+import ru.gadjini.telegram.renamer.service.progress.ProgressManager;
 import ru.gadjini.telegram.renamer.service.queue.rename.RenameQueueService;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.renamer.utils.MemoryUtils;
@@ -129,13 +130,14 @@ public class RenameService {
     }
 
     public void rename(int userId, RenameState renameState, String newFileName) {
+        Any2AnyFile thumb = commandStateService.getState(userId, CommandNames.SET_THUMBNAIL_COMMAND, false, Any2AnyFile.class);
         if (isTheSameFileName(renameState.getFile().getFileName(), renameState.getFile().getMimeType(), newFileName)
-                && renameState.getThumb() == null) {
+                && thumb == null) {
             mediaMessageService.sendFile(userId, renameState.getFile().getFileId());
             LOGGER.debug("Same file name({}, {}, {})", userId, renameState.getFile().getFileId(), renameState.getFile().getFileName());
             return;
         }
-        RenameQueueItem item = renameQueueService.createProcessingItem(userId, renameState, newFileName);
+        RenameQueueItem item = renameQueueService.createProcessingItem(userId, renameState, thumb, newFileName);
         sendStartRenamingMessage(item.getId(), userId, renameState.getFile().getFileSize(), message -> {
             item.setProgressMessageId(message.getMessageId());
             renameQueueService.setProgressMessageId(item.getId(), message.getMessageId());
@@ -145,7 +147,7 @@ public class RenameService {
     }
 
     public void removeAndCancelCurrentTasks(long chatId) {
-        RenameState renameState = commandStateService.getState(chatId, CommandNames.RENAME_COMMAND_NAME, false, RenameState.class);
+        RenameState renameState = commandStateService.getState(chatId, CommandNames.START_COMMAND, false, RenameState.class);
         if (renameState != null && renameState.getFile() != null) {
             List<Integer> ids = renameQueueService.deleteByUserId((int) chatId);
             executor.cancelAndComplete(ids, false);
@@ -182,7 +184,7 @@ public class RenameService {
             LOGGER.debug("Leave({}, {})", chatId, ids.size());
         }
         executor.cancelAndComplete(ids, false);
-        commandStateService.deleteState(chatId, CommandNames.RENAME_COMMAND_NAME);
+        commandStateService.deleteState(chatId, CommandNames.START_COMMAND);
     }
 
     private void pushTasks(SmartExecutorService.JobWeight jobWeight) {

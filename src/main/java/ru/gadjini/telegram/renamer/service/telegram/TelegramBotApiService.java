@@ -363,6 +363,6 @@ public class TelegramBotApiService implements TelegramMediaService {
     }
 
     private String getUrl(String method) {
-        return botApiProperties.getApi() + method;
+        return botApiProperties.getEndpoint() + method;
     }
 }

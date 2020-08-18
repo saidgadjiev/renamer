@@ -1,7 +1,7 @@
 version: '3'
 services:
-  app:
-    container_name: app
+  renamerapp:
+    container_name: renamerapp
     restart: always
     build: ../../../
     volumes:
@@ -13,10 +13,10 @@ services:
       - .env
     depends_on:
       - db
-      - redis
+      - renamerredis
       - url2api
-      - mtproto
-      - botapi
+      - renamermtproto
+      - renamerbotapi
   db:
     container_name: db
     image: postgres:alpine
@@ -27,8 +27,8 @@ services:
       - 5431:5432
     env_file:
       - .db.env
-  redis:
-    container_name: redis
+  renamerredis:
+    container_name: renamerredis
     image: redis:alpine
     restart: always
     command:
@@ -42,33 +42,33 @@ services:
     container_name: url2api
     restart: always
     build: ../../../../url-to-pdf-api/
-  mtproto:
-    container_name: mtproto
+  renamermtproto:
+    container_name: renamermtproto
     restart: always
     build: ../../../../fileutils-rest/
     env_file:
-      - ../../../../fileutils-rest/.env
+      - .env
     volumes:
       - ../../../data/gram:/home/bot/app/gram
       - ../../../data/shr:/tmp/shr
     depends_on:
-      - botapi
-  bot:
-    container_name: bot
+      - renamerbotapi
+  renamerbot:
+    container_name: renamerbot
     restart: always
     build: ../../../../fileutils-bot/
     env_file:
-      - ../../../../fileutils-bot/.env
+      - .env
     volumes:
       - ../../../data/gram:/home/bot/app/gram
     depends_on:
-      - app
-  botapi:
-    container_name: botapi
+      - renamerapp
+  renamerbotapi:
+    container_name: renamerbotapi
     restart: always
     build: ../../../../fileutils-bot-api/
     env_file:
-      - ../../../../fileutils-bot-api/.env
+      - .env
     volumes:
       - ../../../data/logs:/app/logs
       - ../../../data/shr:/tmp/shr

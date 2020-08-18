@@ -4,11 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.gadjini.telegram.renamer.bot.command.api.BotCommand;
+import ru.gadjini.telegram.renamer.bot.command.api.CallbackBotCommand;
+import ru.gadjini.telegram.renamer.bot.command.api.KeyboardBotCommand;
+import ru.gadjini.telegram.renamer.bot.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.renamer.model.bot.api.object.CallbackQuery;
 import ru.gadjini.telegram.renamer.model.bot.api.object.Message;
-import ru.gadjini.telegram.renamer.service.command.navigator.CallbackCommandNavigator;
 import ru.gadjini.telegram.renamer.service.command.navigator.CommandNavigator;
-import ru.gadjini.telegram.renamer.bot.command.api.*;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,8 +31,6 @@ public class CommandExecutor {
     private CommandParser commandParser;
 
     private CommandNavigator commandNavigator;
-
-    private CallbackCommandNavigator callbackCommandNavigator;
 
     @Autowired
     public CommandExecutor(CommandParser commandParser) {
@@ -57,15 +57,6 @@ public class CommandExecutor {
         commands.forEach(callbackBotCommand -> callbackBotCommands.put(callbackBotCommand.getName(), callbackBotCommand));
     }
 
-    @Autowired
-    public void setCallbackCommandNavigator(CallbackCommandNavigator callbackCommandNavigator) {
-        this.callbackCommandNavigator = callbackCommandNavigator;
-    }
-
-    public CallbackBotCommand getCallbackCommand(String commandName) {
-        return callbackBotCommands.get(commandName);
-    }
-
     public boolean isKeyboardCommand(long chatId, String text) {
         return keyboardBotCommands
                 .stream()
@@ -78,14 +69,6 @@ public class CommandExecutor {
 
     public BotCommand getBotCommand(String startCommandName) {
         return botCommands.get(startCommandName);
-    }
-
-    public void cancelCommand(long chatId, String queryId) {
-        NavigableBotCommand navigableBotCommand = commandNavigator.getCurrentCommand(chatId);
-
-        if (navigableBotCommand != null) {
-            navigableBotCommand.cancel(chatId, queryId);
-        }
     }
 
     public void processNonCommandUpdate(Message message, String text) {
@@ -133,16 +116,6 @@ public class CommandExecutor {
         CallbackBotCommand botCommand = callbackBotCommands.get(parseResult.getCommandName());
 
         LOGGER.debug("Callback({}, {})", callbackQuery.getFrom().getId(), botCommand.getClass().getSimpleName());
-        try {
-            if (botCommand instanceof NavigableCallbackBotCommand) {
-                callbackCommandNavigator.push(callbackQuery.getMessage().getChatId(), (NavigableCallbackBotCommand) botCommand);
-            }
-            botCommand.processMessage(callbackQuery, parseResult.getRequestParams());
-        } catch (Exception ex) {
-            if (botCommand instanceof NavigableCallbackBotCommand) {
-                callbackCommandNavigator.silentPop(callbackQuery.getMessage().getChatId());
-            }
-            throw ex;
-        }
+        botCommand.processMessage(callbackQuery, parseResult.getRequestParams());
     }
 }

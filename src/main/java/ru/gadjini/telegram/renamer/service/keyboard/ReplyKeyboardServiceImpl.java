@@ -8,8 +8,6 @@ import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboardMarkup;
 import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboardRemove;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
-import ru.gadjini.telegram.renamer.service.UserService;
-import ru.gadjini.telegram.renamer.service.format.Format;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,37 +19,9 @@ public class ReplyKeyboardServiceImpl implements ReplyKeyboardService {
 
     private LocalisationService localisationService;
 
-    private UserService userService;
-
     @Autowired
-    public ReplyKeyboardServiceImpl(LocalisationService localisationService, UserService userService) {
+    public ReplyKeyboardServiceImpl(LocalisationService localisationService) {
         this.localisationService = localisationService;
-        this.userService = userService;
-    }
-
-    @Override
-    public ReplyKeyboardMarkup getAdminKeyboard(long chatId, Locale locale) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = replyKeyboardMarkup();
-
-        if (userService.isAdmin((int) chatId)) {
-            replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.DOWNLOAD_FILE_COMMAND_NAME, locale)));
-            replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.EXECUTE_CONVERSION_COMMAND_NAME, locale)));
-            replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.REMOVE_GARBAGE_FILES_COMMAND_NAME, locale)));
-            replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.RESET_FILE_LIMIT_COMMAND_NAME, locale)));
-        }
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.GO_BACK_COMMAND_NAME, locale)));
-
-        return replyKeyboardMarkup;
-    }
-
-    @Override
-    public ReplyKeyboardMarkup archiveTypesKeyboard(long chatId, Locale locale) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = replyKeyboardMarkup();
-
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(Format.ZIP.name(), Format.RAR.name()));
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.GO_BACK_COMMAND_NAME, locale)));
-
-        return replyKeyboardMarkup;
     }
 
     @Override
@@ -64,22 +34,6 @@ public class ReplyKeyboardServiceImpl implements ReplyKeyboardService {
         }
         replyKeyboardMarkup.getKeyboard().add(keyboardRow(languages.toArray(new String[0])));
         replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.GO_BACK_COMMAND_NAME, locale)));
-
-        return replyKeyboardMarkup;
-    }
-
-    @Override
-    public ReplyKeyboardMarkup getMainMenu(long chatId, Locale locale) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = replyKeyboardMarkup();
-
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.IMAGE_EDITOR_COMMAND_NAME, locale)));
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.CONVERT_COMMAND_NAME, locale), localisationService.getMessage(MessagesProperties.QUERIES_COMMAND_NAME, locale)));
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.RENAME_COMMAND_NAME, locale), localisationService.getMessage(MessagesProperties.EXTRACT_TEXT_COMMAND_NAME, locale)));
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.UNZIP_COMMAND_NAME, locale), localisationService.getMessage(MessagesProperties.ARCHIVE_COMMAND_NAME, locale)));
-        replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.LANGUAGE_COMMAND_NAME, locale), localisationService.getMessage(MessagesProperties.HELP_COMMAND_NAME, locale)));
-        if (userService.isAdmin((int) chatId)) {
-            replyKeyboardMarkup.getKeyboard().add(keyboardRow(localisationService.getMessage(MessagesProperties.ADMIN_COMMAND_NAME, locale)));
-        }
 
         return replyKeyboardMarkup;
     }

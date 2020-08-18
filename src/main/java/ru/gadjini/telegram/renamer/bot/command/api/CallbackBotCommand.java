@@ -7,11 +7,5 @@ public interface CallbackBotCommand extends MyBotCommand {
 
     String getName();
 
-    /**
-     */
     void processMessage(CallbackQuery callbackQuery, RequestParams requestParams);
-
-    default void processNonCommandCallback(CallbackQuery callbackQuery, RequestParams requestParams) {
-
-    }
 }

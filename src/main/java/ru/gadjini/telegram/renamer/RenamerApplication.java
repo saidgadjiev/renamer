@@ -7,8 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import ru.gadjini.telegram.renamer.property.BotApiProperties;
-import ru.gadjini.telegram.renamer.property.ConversionProperties;
-import ru.gadjini.telegram.renamer.property.DetectLanguageProperties;
 import ru.gadjini.telegram.renamer.property.MTProtoProperties;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
 
@@ -17,8 +15,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 @EnableConfigurationProperties(value = {
-        ConversionProperties.class,
-        DetectLanguageProperties.class,
         MTProtoProperties.class,
         BotApiProperties.class
 })

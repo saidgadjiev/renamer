@@ -2,10 +2,11 @@ package ru.gadjini.telegram.renamer.service.queue.rename;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.gadjini.telegram.renamer.bot.command.keyboard.rename.RenameState;
+import ru.gadjini.telegram.renamer.bot.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.dao.queue.RenameQueueDao;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.domain.TgFile;
+import ru.gadjini.telegram.renamer.model.Any2AnyFile;
 import ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class RenameQueueService {
         renameQueueDao.resetProcessing();
     }
 
-    public RenameQueueItem createProcessingItem(int userId, RenameState renameState, String newFileName) {
+    public RenameQueueItem createProcessingItem(int userId, RenameState renameState, Any2AnyFile thumbnail, String newFileName) {
         RenameQueueItem renameQueueItem = new RenameQueueItem();
         renameQueueItem.setUserId(userId);
         renameQueueItem.setNewFileName(newFileName);
@@ -38,11 +39,11 @@ public class RenameQueueService {
         file.setThumb(renameState.getFile().getThumb());
         renameQueueItem.setFile(file);
 
-        if (renameState.getThumb() != null) {
+        if (thumbnail != null) {
             TgFile thumb = new TgFile();
-            thumb.setFileId(renameState.getThumb().getFileId());
-            thumb.setFileName(renameState.getThumb().getFileName());
-            thumb.setMimeType(renameState.getThumb().getMimeType());
+            thumb.setFileId(thumbnail.getFileId());
+            thumb.setFileName(thumbnail.getFileName());
+            thumb.setMimeType(thumbnail.getMimeType());
             renameQueueItem.setThumb(thumb);
         }
 

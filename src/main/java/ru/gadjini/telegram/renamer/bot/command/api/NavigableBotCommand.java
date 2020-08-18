@@ -28,8 +28,4 @@ public interface NavigableBotCommand extends MyBotCommand {
     default boolean setPrevCommand(long chatId, String prevCommand) {
         return false;
     }
-
-    default boolean canLeave(long chatId) {
-        return true;
-    }
 }

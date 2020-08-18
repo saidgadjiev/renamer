@@ -22,23 +22,8 @@ public class CurrReplyKeyboard implements ReplyKeyboardService {
     }
 
     @Override
-    public ReplyKeyboardMarkup getAdminKeyboard(long chatId, Locale locale) {
-        return setCurrentKeyboard(chatId, keyboardService.getAdminKeyboard(chatId, locale));
-    }
-
-    @Override
-    public ReplyKeyboardMarkup archiveTypesKeyboard(long chatId, Locale locale) {
-        return setCurrentKeyboard(chatId, keyboardService.archiveTypesKeyboard(chatId, locale));
-    }
-
-    @Override
     public ReplyKeyboardMarkup languageKeyboard(long chatId, Locale locale) {
         return setCurrentKeyboard(chatId, keyboardService.languageKeyboard(chatId, locale));
-    }
-
-    @Override
-    public ReplyKeyboardMarkup getMainMenu(long chatId, Locale locale) {
-        return setCurrentKeyboard(chatId, keyboardService.getMainMenu(chatId, locale));
     }
 
     @Override
