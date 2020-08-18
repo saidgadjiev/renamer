@@ -14,7 +14,6 @@ services:
     depends_on:
       - db
       - renamerredis
-      - url2api
       - renamermtproto
       - renamerbotapi
   db:
@@ -38,10 +37,6 @@ services:
       - '--save 60 10000'
     volumes:
       - ../../../data/redis:/data
-  url2api:
-    container_name: url2api
-    restart: always
-    build: ../../../../url-to-pdf-api/
   renamermtproto:
     container_name: renamermtproto
     restart: always
