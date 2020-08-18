@@ -28,18 +28,6 @@ public class SchedulerConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerConfiguration.class);
 
-    private static final int LIGHT_QUEUE_SIZE = 10;
-
-    private static final int HEAVY_QUEUE_SIZE = 10;
-
-    private static final int THREADS_KEEP_ALIVE = 0;
-
-    private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
-
-    private static final int LIGHT_THREADS_COUNT = Runtime.getRuntime().availableProcessors();
-
-    private static final int HEAVY_THREADS_COUNT = Runtime.getRuntime().availableProcessors();
-
     private RenameService renameService;
 
     private UserService userService;
@@ -57,7 +45,7 @@ public class SchedulerConfiguration {
     @Bean
     public TaskScheduler jobsThreadPoolTaskScheduler() {
         ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
-        threadPoolTaskScheduler.setPoolSize(Runtime.getRuntime().availableProcessors());
+        threadPoolTaskScheduler.setPoolSize(2);
         threadPoolTaskScheduler.setThreadNamePrefix("JobsThreadPoolTaskScheduler");
         threadPoolTaskScheduler.setErrorHandler(ex -> {
             if (userService.deadlock(ex)) {
@@ -76,8 +64,8 @@ public class SchedulerConfiguration {
     @Qualifier("commonTaskExecutor")
     public ThreadPoolTaskExecutor commonTaskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(Runtime.getRuntime().availableProcessors());
-        taskExecutor.setMaxPoolSize(Runtime.getRuntime().availableProcessors());
+        taskExecutor.setCorePoolSize(3);
+        taskExecutor.setMaxPoolSize(3);
         taskExecutor.setThreadNamePrefix("CommonTaskExecutor");
         taskExecutor.initialize();
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
@@ -91,9 +79,9 @@ public class SchedulerConfiguration {
     @Qualifier("renameTaskExecutor")
     public SmartExecutorService renameTaskExecutor() {
         SmartExecutorService executorService = new SmartExecutorService();
-        ThreadPoolExecutor lightTaskExecutor = new ThreadPoolExecutor(LIGHT_THREADS_COUNT, LIGHT_THREADS_COUNT,
-                THREADS_KEEP_ALIVE, KEEP_ALIVE_TIME_UNIT,
-                new LinkedBlockingQueue<>(LIGHT_QUEUE_SIZE),
+        ThreadPoolExecutor lightTaskExecutor = new ThreadPoolExecutor(2, 2,
+                0, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(10),
                 (r, executor) -> {
                     executorService.complete(((Job) r).getId());
                     renameService.rejectRenameTask((Job) r);
@@ -106,9 +94,9 @@ public class SchedulerConfiguration {
                 }
             }
         };
-        ThreadPoolExecutor heavyTaskExecutor = new ThreadPoolExecutor(HEAVY_THREADS_COUNT, HEAVY_THREADS_COUNT,
-                THREADS_KEEP_ALIVE, KEEP_ALIVE_TIME_UNIT,
-                new LinkedBlockingQueue<>(HEAVY_QUEUE_SIZE),
+        ThreadPoolExecutor heavyTaskExecutor = new ThreadPoolExecutor(3, 3,
+                0, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(10),
                 (r, executor) -> {
                     executorService.complete(((Job) r).getId());
                     renameService.rejectRenameTask((Job) r);
