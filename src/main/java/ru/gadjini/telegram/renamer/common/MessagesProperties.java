@@ -86,4 +86,10 @@ public class MessagesProperties {
     public static final String MESSAGE_AWAITING_PROCESSING = "message.awaiting.processing";
 
     public static final String MESSAGE_SPEED = "message.speed";
+
+    public static final String SET_THUMB_COMMAND_DESCRIPTION = "set.thumb.command.description";
+
+    public static final String VIEW_THUMB_COMMAND_DESCRIPTION = "view.thumb.command.description";
+
+    public static final String DELETE_THUMB_COMMAND_DESCRIPTION = "delete.thumb.command.description";
 }

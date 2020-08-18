@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.gadjini.telegram.renamer.bot.command.bot.SetThumbnailCommand;
 import ru.gadjini.telegram.renamer.bot.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
@@ -308,6 +309,7 @@ public class RenameService {
 
                 if (userThumb != null) {
                     thumbFile = thumbService.convertToThumb(userId, userThumb.getFileId(), userThumb.getFileName(), userThumb.getMimeType());
+                    commandStateService.deleteState(userId, CommandNames.SET_THUMBNAIL_COMMAND);
                 } else if (StringUtils.isNotBlank(thumb)) {
                     thumbFile = tempFileService.createTempFile(userId, fileId, TAG, Format.JPG.getExt());
                     fileManager.downloadFileByFileId(thumb, thumbFile);
