@@ -91,5 +91,5 @@ public class MessagesProperties {
 
     public static final String VIEW_THUMB_COMMAND_DESCRIPTION = "view.thumb.command.description";
 
-    public static final String DELETE_THUMB_COMMAND_DESCRIPTION = "delete.thumb.command.description";
+    public static final String DEL_THUMB_COMMAND_DESCRIPTION = "del.thumb.command.description";
 }
