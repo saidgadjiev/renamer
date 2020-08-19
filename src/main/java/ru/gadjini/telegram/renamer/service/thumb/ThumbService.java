@@ -31,11 +31,11 @@ public class ThumbService {
         this.convertDevice = convertDevice;
     }
 
-    public SmartTempFile convertToThumb(long chatId, String fileId, String fileName, String mimeType) {
+    public SmartTempFile convertToThumb(long chatId, String fileId, long fileSize, String fileName, String mimeType) {
         String ext = formatService.getExt(fileName, mimeType);
         SmartTempFile thumb = tempFileService.createTempFile(chatId, fileId, TAG, ext);
         try {
-            fileManager.downloadFileByFileId(fileId, thumb);
+            fileManager.downloadFileByFileId(fileId, fileSize, thumb);
             SmartTempFile out = tempFileService.createTempFile(chatId, fileId, TAG, Format.JPG.getExt());
             try {
                 convertDevice.convertToThumb(thumb.getAbsolutePath(), out.getAbsolutePath());

@@ -28,6 +28,14 @@ public class TelegramMediaServiceProvider {
         this.telegramMTProtoService = telegramMTProtoService;
     }
 
+    public boolean isBotApiDownloadFile(long fileSize) {
+        return fileSize > 0 && fileSize <= BOT_API_DOWNLOAD_FILE_LIMIT;
+    }
+
+    public boolean isBotApiUploadFile(long fileSize) {
+        return fileSize > 0 && fileSize <= BOT_API_UPLOAD_FILE_LIMIT;
+    }
+
     public TelegramMediaService getMediaService(InputMedia media) {
         return getMediaService(media.getFileId(), media.getFilePath());
     }
@@ -46,7 +54,7 @@ public class TelegramMediaServiceProvider {
         }
         File file = new File(filePath);
 
-        if (file.length() < BOT_API_UPLOAD_FILE_LIMIT) {
+        if (isBotApiUploadFile(file.length())) {
             return telegramBotApiService;
         }
 
@@ -54,7 +62,7 @@ public class TelegramMediaServiceProvider {
     }
 
     public TelegramMediaService getDownloadMediaService(long fileSize) {
-        if (fileSize > 0 && fileSize < BOT_API_DOWNLOAD_FILE_LIMIT) {
+        if (isBotApiDownloadFile(fileSize)) {
             return telegramBotApiService;
         }
 

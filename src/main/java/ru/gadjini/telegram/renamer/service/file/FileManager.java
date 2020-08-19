@@ -9,9 +9,9 @@ import ru.gadjini.telegram.renamer.exception.UserException;
 import ru.gadjini.telegram.renamer.io.SmartTempFile;
 import ru.gadjini.telegram.renamer.model.bot.api.object.Progress;
 import ru.gadjini.telegram.renamer.service.LocalisationService;
+import ru.gadjini.telegram.renamer.service.UserService;
 import ru.gadjini.telegram.renamer.service.message.TelegramMediaServiceProvider;
 import ru.gadjini.telegram.renamer.service.telegram.TelegramMTProtoService;
-import ru.gadjini.telegram.renamer.service.UserService;
 
 import java.util.Locale;
 
@@ -41,21 +41,17 @@ public class FileManager {
     }
 
     public void setInputFilePending(long chatId, Integer replyToMessageId, String fileId, long fileSize, String command) {
-        if (fileSize > 0 && TelegramMediaServiceProvider.BOT_API_DOWNLOAD_FILE_LIMIT > fileSize) {
+        if (mediaServiceProvider.isBotApiDownloadFile(fileSize)) {
             return;
         }
         fileLimitsDao.setInputFile(chatId, new InputFileState(replyToMessageId, fileId, command));
     }
 
-    public void resetLimits(long chatId) {
-        fileLimitsDao.deleteInputFile(chatId);
-    }
-
     public void inputFile(long chatId, String fileId, long fileSize) {
         if (fileSize == 0) {
-            LOGGER.debug("File size 0({}, {}, {})", chatId, fileId, fileId);
+            LOGGER.debug("File size ({}, {}, {})", chatId, fileId, fileId);
         }
-        if (fileSize > 0 && TelegramMediaServiceProvider.BOT_API_DOWNLOAD_FILE_LIMIT > fileSize) {
+        if (mediaServiceProvider.isBotApiDownloadFile(fileSize)) {
             return;
         }
         InputFileState inputFileState = fileLimitsDao.getInputFile(chatId);
@@ -73,8 +69,8 @@ public class FileManager {
         }
     }
 
-    public void downloadFileByFileId(String fileId, SmartTempFile outputFile) {
-        telegramService.downloadFileByFileId(fileId, outputFile);
+    public void downloadFileByFileId(String fileId, long fileSize, SmartTempFile outputFile) {
+        mediaServiceProvider.getDownloadMediaService(fileSize).downloadFileByFileId(fileId, fileSize, outputFile);
     }
 
     public void downloadFileByFileId(String fileId, long fileSize, Progress progress, SmartTempFile outputFile) {
@@ -82,7 +78,7 @@ public class FileManager {
     }
 
     public FileWorkObject fileWorkObject(long chatId, long fileSize) {
-        return new FileWorkObject(chatId, fileSize, fileLimitsDao);
+        return new FileWorkObject(chatId, fileSize, fileLimitsDao, mediaServiceProvider);
     }
 
     public boolean cancelDownloading(String fileId) {
@@ -95,9 +91,5 @@ public class FileManager {
 
     public void cancelDownloads() {
         telegramService.cancelDownloads();
-    }
-
-    public void restoreFileIfNeed(String filePath, String fileId) {
-        telegramService.restoreFileIfNeed(filePath, fileId);
     }
 }

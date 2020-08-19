@@ -196,7 +196,7 @@ public class RenameService {
 
     private void sendStartRenamingMessage(int jobId, int userId, long fileSize, Consumer<Message> callback) {
         Locale locale = userService.getLocaleOrDefault(userId);
-        if (progressManager.isShowingProgress(fileSize)) {
+        if (progressManager.isShowingDownloadProgress(fileSize)) {
             String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
             messageService.sendMessage(new SendMessage((long) userId, message)
                     .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(jobId, locale)), callback);
@@ -307,11 +307,11 @@ public class RenameService {
                 fileManager.downloadFileByFileId(fileId, fileSize, progress(userId, jobId, progressMessageId, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
 
                 if (userThumb != null) {
-                    thumbFile = thumbService.convertToThumb(userId, userThumb.getFileId(), userThumb.getFileName(), userThumb.getMimeType());
+                    thumbFile = thumbService.convertToThumb(userId, userThumb.getFileId(), userThumb.getSize(), userThumb.getFileName(), userThumb.getMimeType());
                     commandStateService.deleteState(userId, CommandNames.SET_THUMBNAIL_COMMAND);
                 } else if (StringUtils.isNotBlank(thumb)) {
                     thumbFile = tempFileService.createTempFile(userId, fileId, TAG, Format.JPG.getExt());
-                    fileManager.downloadFileByFileId(thumb, thumbFile);
+                    fileManager.downloadFileByFileId(thumb, 1, thumbFile);
                 }
                 mediaMessageService.sendDocument(new SendDocument((long) userId, finalFileName, file.getFile())
                         .setProgress(progress(userId, jobId, progressMessageId, RenameStep.UPLOADING, RenameStep.COMPLETED))

@@ -62,7 +62,7 @@ public class ViewThumbnailCommand implements BotCommand {
                 mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), thumbnail.getCachedFileId()));
             } else {
                 executor.execute(() -> {
-                    SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileName(), thumbnail.getMimeType());
+                    SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileSize(), thumbnail.getFileName(), thumbnail.getMimeType());
                     try {
                         SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), tempFile.getFile()));
                         thumbnail.setCachedFileId(sendFileResult.getFileId());

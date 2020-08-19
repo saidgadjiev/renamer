@@ -44,6 +44,7 @@ public class RenameQueueService {
             thumb.setFileId(thumbnail.getFileId());
             thumb.setFileName(thumbnail.getFileName());
             thumb.setMimeType(thumbnail.getMimeType());
+            thumb.setSize(thumbnail.getFileSize());
             renameQueueItem.setThumb(thumb);
         }
 
