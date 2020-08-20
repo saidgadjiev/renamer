@@ -167,7 +167,11 @@ public class RenameService {
                     localisationService.getMessage(MessagesProperties.MESSAGE_QUERY_CANCELED, userService.getLocaleOrDefault((int) chatId))
             ));
             if (!executor.cancelAndComplete(jobId, true)) {
-                renameQueueService.delete(jobId);
+                RenameQueueItem renameQueueItem = renameQueueService.deleteWithReturning(jobId);
+
+                if (renameQueueItem != null) {
+                    fileManager.fileWorkObject(renameQueueItem.getId(), renameQueueItem.getFile().getSize()).stop();
+                }
             }
         }
         messageService.editMessage(new EditMessageText(
