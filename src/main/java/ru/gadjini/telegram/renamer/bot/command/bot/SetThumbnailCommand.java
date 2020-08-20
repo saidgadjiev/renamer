@@ -111,6 +111,10 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
     }
 
     private void validate(int userId, Any2AnyFile any2AnyFile, Locale locale) {
+        if (any2AnyFile.getFormat() == null) {
+            LOGGER.debug("Null format({}, {})", userId, any2AnyFile);
+            throw new UserException(localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_INVALID_FILE, locale));
+        }
         if (!Objects.equals(any2AnyFile.getFormat().getCategory(), FormatCategory.IMAGES)) {
             LOGGER.debug("Non image thumb({}, {})", userId, any2AnyFile.getFormat());
             throw new UserException(localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_INVALID_FILE, locale));

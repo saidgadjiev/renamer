@@ -1,6 +1,7 @@
 package ru.gadjini.telegram.renamer.model;
 
 import ru.gadjini.telegram.renamer.service.format.Format;
+import ru.gadjini.telegram.renamer.utils.MemoryUtils;
 
 public class Any2AnyFile {
 
@@ -81,6 +82,9 @@ public class Any2AnyFile {
                 ", fileName='" + fileName + '\'' +
                 ", mimeType='" + mimeType + '\'' +
                 ", format=" + format +
+                ", fileSize=" + MemoryUtils.humanReadableByteCount(fileSize) +
+                ", thumb='" + thumb + '\'' +
+                ", cachedFileId='" + cachedFileId + '\'' +
                 '}';
     }
 }
