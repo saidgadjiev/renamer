@@ -9,5 +9,6 @@ start - restart the bot
 sethumb- set thumbnail
 viewthumb - view thumbnail
 delthumb - delete thumbnail
+language - change language
 help - help
 goback- Go back
