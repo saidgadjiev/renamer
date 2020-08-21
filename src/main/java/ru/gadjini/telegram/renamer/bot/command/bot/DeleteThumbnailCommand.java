@@ -37,7 +37,7 @@ public class DeleteThumbnailCommand implements BotCommand {
     }
 
     @Override
-    public void processMessage(Message message) {
+    public void processMessage(Message message, String[] params) {
         Any2AnyFile thumb = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, Any2AnyFile.class);
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
 

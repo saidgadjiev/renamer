@@ -10,6 +10,8 @@ public class CommandNames {
 
     public static final String START_COMMAND = "start";
 
+    public static final String GET_FILE_COMMAND = "getfile";
+
     public static final String HELP_COMMAND = "help";
 
     public static final String LANGUAGE_COMMAND_NAME = "language";

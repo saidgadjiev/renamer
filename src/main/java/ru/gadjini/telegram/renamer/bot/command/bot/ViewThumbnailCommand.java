@@ -55,7 +55,7 @@ public class ViewThumbnailCommand implements BotCommand {
     }
 
     @Override
-    public void processMessage(Message message) {
+    public void processMessage(Message message, String[] params) {
         Any2AnyFile thumbnail = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, Any2AnyFile.class);
         if (thumbnail != null) {
             if (StringUtils.isNotBlank(thumbnail.getCachedFileId())) {

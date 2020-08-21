@@ -69,7 +69,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
     }
 
     @Override
-    public void processMessage(Message message) {
+    public void processMessage(Message message, String[] params) {
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
         messageService.sendMessage(new SendMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_SEND_THUMB, locale))
                 .setReplyMarkup(replyKeyboardService.cancel(message.getChatId(), locale)));

@@ -5,7 +5,7 @@ import ru.gadjini.telegram.renamer.model.bot.api.object.Message;
 public interface BotCommand {
     String COMMAND_INIT_CHARACTER = "/";
 
-    void processMessage(Message message);
+    void processMessage(Message message, String[] params);
 
     String getCommandIdentifier();
 }
