@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import ru.gadjini.telegram.renamer.exception.botapi.TelegramApiRequestException;
-import ru.gadjini.telegram.renamer.service.UserService;
 import ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService;
 import ru.gadjini.telegram.renamer.service.rename.RenameService;
+import ru.gadjini.telegram.smart.bot.commons.exception.botapi.TelegramApiRequestException;
+import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;

@@ -5,9 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
-import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboardMarkup;
-import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.ReplyKeyboardRemove;
-import ru.gadjini.telegram.renamer.service.LocalisationService;
+import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboard;
+import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboardMarkup;
+import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboardRemove;
+import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,13 +16,18 @@ import java.util.Locale;
 
 @Service
 @Qualifier("keyboard")
-public class ReplyKeyboardServiceImpl implements ReplyKeyboardService {
+public class ReplyKeyboardServiceImpl implements RenamerReplyKeyboardService {
 
     private LocalisationService localisationService;
 
     @Autowired
     public ReplyKeyboardServiceImpl(LocalisationService localisationService) {
         this.localisationService = localisationService;
+    }
+
+    @Override
+    public ReplyKeyboard getMainMenu(long chatId, Locale locale) {
+        return removeKeyboard(chatId);
     }
 
     @Override

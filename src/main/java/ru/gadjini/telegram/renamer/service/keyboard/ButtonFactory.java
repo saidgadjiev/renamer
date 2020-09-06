@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
-import ru.gadjini.telegram.renamer.model.bot.api.object.replykeyboard.buttons.InlineKeyboardButton;
+import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.buttons.InlineKeyboardButton;
 import ru.gadjini.telegram.renamer.request.Arg;
-import ru.gadjini.telegram.renamer.request.RequestParams;
-import ru.gadjini.telegram.renamer.service.LocalisationService;
-import ru.gadjini.telegram.renamer.service.command.CommandParser;
+import ru.gadjini.telegram.smart.bot.commons.service.request.RequestParams;
+import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
+import ru.gadjini.telegram.smart.bot.commons.service.command.CommandParser;
 
 import java.util.Locale;
 

@@ -3,7 +3,7 @@ package ru.gadjini.telegram.renamer.service.rename;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
-import ru.gadjini.telegram.renamer.service.LocalisationService;
+import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.renamer.service.progress.Lang;
 
 import java.util.Locale;
