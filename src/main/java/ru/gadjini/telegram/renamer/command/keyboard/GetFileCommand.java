@@ -17,7 +17,7 @@ public class GetFileCommand implements BotCommand {
     private UserService userService;
 
     @Autowired
-    public GetFileCommand(@Qualifier("medialimits") MediaMessageService messageService, UserService userService) {
+    public GetFileCommand(@Qualifier("mediaLimits") MediaMessageService messageService, UserService userService) {
         this.mediaMessageService = messageService;
         this.userService = userService;
     }

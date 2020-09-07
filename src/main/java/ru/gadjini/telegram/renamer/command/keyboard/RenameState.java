@@ -1,18 +1,18 @@
 package ru.gadjini.telegram.renamer.command.keyboard;
 
-import ru.gadjini.telegram.smart.bot.commons.model.Any2AnyFile;
+import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 
 public class RenameState {
 
-    private Any2AnyFile file;
+    private MessageMedia file;
 
     private int replyMessageId;
 
-    public void setFile(Any2AnyFile file) {
+    public void setFile(MessageMedia file) {
         this.file = file;
     }
 
-    public Any2AnyFile getFile() {
+    public MessageMedia getFile() {
         return file;
     }
 

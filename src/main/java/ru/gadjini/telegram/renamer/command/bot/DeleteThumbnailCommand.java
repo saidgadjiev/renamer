@@ -3,10 +3,10 @@ package ru.gadjini.telegram.renamer.command.bot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
-import ru.gadjini.telegram.smart.bot.commons.model.Any2AnyFile;
+import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
+import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
@@ -28,7 +28,7 @@ public class DeleteThumbnailCommand implements BotCommand {
     private UserService userService;
 
     @Autowired
-    public DeleteThumbnailCommand(CommandStateService commandStateService, @Qualifier("messagelimits") MessageService messageService,
+    public DeleteThumbnailCommand(CommandStateService commandStateService, @Qualifier("messageLimits") MessageService messageService,
                                   LocalisationService localisationService, UserService userService) {
         this.commandStateService = commandStateService;
         this.messageService = messageService;
@@ -38,7 +38,7 @@ public class DeleteThumbnailCommand implements BotCommand {
 
     @Override
     public void processMessage(Message message, String[] params) {
-        Any2AnyFile thumb = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, Any2AnyFile.class);
+        MessageMedia thumb = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
 
         if (thumb != null) {

@@ -6,8 +6,8 @@ import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.dao.RenameQueueDao;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.domain.TgFile;
-import ru.gadjini.telegram.smart.bot.commons.model.Any2AnyFile;
-import ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService;
+import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
+import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public class RenameQueueService {
         renameQueueDao.resetProcessing();
     }
 
-    public RenameQueueItem createProcessingItem(int userId, RenameState renameState, Any2AnyFile thumbnail, String newFileName) {
+    public RenameQueueItem createProcessingItem(int userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
         RenameQueueItem renameQueueItem = new RenameQueueItem();
         renameQueueItem.setUserId(userId);
         renameQueueItem.setNewFileName(newFileName);

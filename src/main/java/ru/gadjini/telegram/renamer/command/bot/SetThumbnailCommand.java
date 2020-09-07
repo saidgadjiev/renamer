@@ -11,16 +11,16 @@ import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
-import ru.gadjini.telegram.smart.bot.commons.model.Any2AnyFile;
+import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
-import ru.gadjini.telegram.smart.bot.commons.service.FileService;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
+import ru.gadjini.telegram.smart.bot.commons.service.MessageMediaService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.navigator.CommandNavigator;
-import ru.gadjini.telegram.smart.bot.commons.service.conversion.api.FormatCategory;
+import ru.gadjini.telegram.smart.bot.commons.service.format.FormatCategory;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
 
 import java.util.Locale;
@@ -43,13 +43,13 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
 
     private RenamerReplyKeyboardService replyKeyboardService;
 
-    private FileService fileService;
+    private MessageMediaService fileService;
 
     @Autowired
     public SetThumbnailCommand(CommandStateService commandStateService,
                                @Qualifier("messageLimits") MessageService messageService, LocalisationService localisationService,
                                UserService userService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
-                               FileService fileService) {
+                               MessageMediaService fileService) {
         this.commandStateService = commandStateService;
         this.messageService = messageService;
         this.localisationService = localisationService;
@@ -78,7 +78,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
     @Override
     public void processNonCommandUpdate(Message message, String text) {
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
-        Any2AnyFile any2AnyFile = fileService.getFile(message, locale);
+        MessageMedia any2AnyFile = fileService.getMedia(message, locale);
 
         if (any2AnyFile != null) {
             validate(message.getFrom().getId(), any2AnyFile, locale);
@@ -110,7 +110,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
         return true;
     }
 
-    private void validate(int userId, Any2AnyFile any2AnyFile, Locale locale) {
+    private void validate(int userId, MessageMedia any2AnyFile, Locale locale) {
         if (any2AnyFile.getFormat() == null) {
             LOGGER.debug("Null format({}, {})", userId, any2AnyFile);
             throw new UserException(localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_INVALID_FILE, locale));

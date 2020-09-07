@@ -10,13 +10,13 @@ import ru.gadjini.telegram.renamer.service.rename.RenameService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
-import ru.gadjini.telegram.smart.bot.commons.model.Any2AnyFile;
+import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.TgMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboard;
-import ru.gadjini.telegram.smart.bot.commons.service.FileService;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
+import ru.gadjini.telegram.smart.bot.commons.service.MessageMediaService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
@@ -38,12 +38,12 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     private final RenameService renameService;
 
-    private FileService fileService;
+    private MessageMediaService fileService;
 
     @Autowired
     public StartCommand(LocalisationService localisationService, CommandStateService commandStateService,
                         @Qualifier("messageLimits") MessageService messageService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
-                        UserService userService, RenameService renameService, FileService fileService) {
+                        UserService userService, RenameService renameService, MessageMediaService fileService) {
         this.commandStateService = commandStateService;
         this.localisationService = localisationService;
         this.messageService = messageService;
@@ -87,7 +87,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
     @Override
     public void processNonCommandUpdate(Message message, String text) {
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
-        Any2AnyFile any2AnyFile = fileService.getFile(message, locale);
+        MessageMedia any2AnyFile = fileService.getMedia(message, locale);
 
         if (any2AnyFile != null) {
             RenameState renameState = initState(message, any2AnyFile);
@@ -138,7 +138,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         return msg;
     }
 
-    private RenameState initState(Message message, Any2AnyFile any2AnyFile) {
+    private RenameState initState(Message message, MessageMedia any2AnyFile) {
         RenameState renameState = new RenameState();
         renameState.setReplyMessageId(message.getMessageId());
         renameState.setFile(any2AnyFile);

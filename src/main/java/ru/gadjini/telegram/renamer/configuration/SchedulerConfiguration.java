@@ -9,19 +9,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService;
 import ru.gadjini.telegram.renamer.service.rename.RenameService;
 import ru.gadjini.telegram.smart.bot.commons.exception.botapi.TelegramApiRequestException;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
+import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService.Job;
-import static ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService.JobWeight.HEAVY;
-import static ru.gadjini.telegram.renamer.service.concurrent.SmartExecutorService.JobWeight.LIGHT;
+import static ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService.JobWeight.HEAVY;
+import static ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService.JobWeight.LIGHT;
 
 @Configuration
 public class SchedulerConfiguration {
@@ -83,12 +82,12 @@ public class SchedulerConfiguration {
                 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(10),
                 (r, executor) -> {
-                    executorService.complete(((Job) r).getId());
-                    renameService.rejectRenameTask((Job) r);
+                    executorService.complete(((SmartExecutorService.Job) r).getId());
+                    renameService.rejectRenameTask((SmartExecutorService.Job) r);
                 }) {
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
-                Job poll = renameService.getTask(LIGHT);
+                SmartExecutorService.Job poll = renameService.getTask(LIGHT);
                 if (poll != null) {
                     executorService.execute(poll);
                 }
@@ -98,12 +97,12 @@ public class SchedulerConfiguration {
                 0, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(10),
                 (r, executor) -> {
-                    executorService.complete(((Job) r).getId());
-                    renameService.rejectRenameTask((Job) r);
+                    executorService.complete(((SmartExecutorService.Job) r).getId());
+                    renameService.rejectRenameTask((SmartExecutorService.Job) r);
                 }) {
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
-                Job poll = renameService.getTask(HEAVY);
+                SmartExecutorService.Job poll = renameService.getTask(HEAVY);
                 if (poll != null) {
                     executorService.execute(poll);
                 }
