@@ -95,9 +95,9 @@ public class RenameQueueDao {
         );
     }
 
-    public List<Integer> deleteByUserId(int userId) {
-        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? RETURNING id) SELECT id FROM r",
-                ps -> ps.setInt(1, userId), (rs, rowNum) -> rs.getInt("id"));
+    public RenameQueueItem deleteByUserId(int userId) {
+        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? RETURNING id) SELECT * FROM r",
+                ps -> ps.setInt(1, userId), rs -> rs.next() ? map(rs) : null);
     }
 
     public Boolean exists(int jobId) {

@@ -30,10 +30,10 @@ import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
-import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
-import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileWorkObject;
+import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
+import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
 import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
@@ -146,11 +146,10 @@ public class RenameService {
         });
     }
 
-    public void removeAndCancelCurrentTasks(long chatId) {
-        RenameState renameState = commandStateService.getState(chatId, CommandNames.START_COMMAND, false, RenameState.class);
-        if (renameState != null && renameState.getFile() != null) {
-            List<Integer> ids = renameQueueService.deleteByUserId((int) chatId);
-            executor.cancelAndComplete(ids, false);
+    public void removeAndCancelCurrentTask(long chatId) {
+        RenameQueueItem renameQueueItem = renameQueueService.deleteByUserId((int) chatId);
+        if (renameQueueItem != null && !executor.cancelAndComplete(renameQueueItem.getId(), true)) {
+            fileManager.fileWorkObject(chatId, renameQueueItem.getFile().getSize()).stop();
         }
     }
 
@@ -180,15 +179,6 @@ public class RenameService {
 
     public void shutdown() {
         executor.shutdown();
-    }
-
-    public void leave(long chatId) {
-        List<Integer> ids = renameQueueService.deleteByUserId((int) chatId);
-        if (ids.size() > 0) {
-            LOGGER.debug("Leave({}, {})", chatId, ids.size());
-        }
-        executor.cancelAndComplete(ids, false);
-        commandStateService.deleteState(chatId, CommandNames.START_COMMAND);
     }
 
     private void pushTasks(SmartExecutorService.JobWeight jobWeight) {

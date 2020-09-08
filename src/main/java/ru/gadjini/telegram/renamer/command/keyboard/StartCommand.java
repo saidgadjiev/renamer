@@ -93,7 +93,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
             RenameState renameState = initState(message, any2AnyFile);
 
             messageService.sendMessage(new HtmlMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale)));
-            renameService.removeAndCancelCurrentTasks(message.getChatId());
+            renameService.removeAndCancelCurrentTask(message.getChatId());
             commandStateService.setState(message.getChatId(), getHistoryName(), renameState);
         } else if (message.hasText()) {
             RenameState renameState = commandStateService.getState(message.getChatId(), getHistoryName(), true, RenameState.class);
@@ -103,11 +103,6 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
             renameService.rename(message.getFrom().getId(), renameState, text);
             commandStateService.deleteState(message.getChatId(), CommandNames.START_COMMAND);
         }
-    }
-
-    @Override
-    public void leave(long chatId) {
-        renameService.leave(chatId);
     }
 
     @Override

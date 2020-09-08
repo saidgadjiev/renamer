@@ -83,7 +83,7 @@ public class RenameQueueService {
         return renameQueueDao.deleteWithReturning(id);
     }
 
-    public List<Integer> deleteByUserId(int userId) {
+    public RenameQueueItem deleteByUserId(int userId) {
         return renameQueueDao.deleteByUserId(userId);
     }
 
