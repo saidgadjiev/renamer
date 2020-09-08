@@ -44,6 +44,7 @@ services:
     volumes:
       - ../../../data/logs:/app/logs
       - ../../../data/shr:/tmp/shr
-volumes:
-  pgdata:
-    external: true
+networks:
+  default:
+    external:
+      name: fileutils
