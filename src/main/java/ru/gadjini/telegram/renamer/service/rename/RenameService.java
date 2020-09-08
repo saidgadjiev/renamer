@@ -217,11 +217,8 @@ public class RenameService {
         String ext = formatService.getExt(fileName, mimeType);
 
         String finalFileName = createNewFileName(newFileName, ext);
-        if (finalFileName.equals(fileName)) {
-            return true;
-        }
 
-        return false;
+        return finalFileName.equals(fileName);
     }
 
     private Progress progress(long chatId, int jobId, int processMessageId, RenameStep renameStep, RenameStep nextStep) {
@@ -253,7 +250,7 @@ public class RenameService {
 
         private final Logger LOGGER = LoggerFactory.getLogger(RenameTask.class);
 
-        public static final String TAG = "rename";
+        private static final String TAG = "rename";
 
         private int jobId;
         private final int userId;

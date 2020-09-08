@@ -12,31 +12,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - renamerredis
       - renamermtproto
       - renamerbotapi
-  db:
-    container_name: db
-    image: postgres:alpine
-    restart: always
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - 5431:5432
-    env_file:
-      - .db.env
-  renamerredis:
-    container_name: renamerredis
-    image: redis:alpine
-    restart: always
-    command:
-      - 'redis-server'
-      - '--save 900 1'
-      - '--save 300 10'
-      - '--save 60 10000'
-    volumes:
-      - ../../../data/redis:/data
   renamermtproto:
     container_name: renamermtproto
     restart: always
