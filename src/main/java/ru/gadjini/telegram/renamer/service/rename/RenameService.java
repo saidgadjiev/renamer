@@ -285,7 +285,7 @@ public class RenameService {
         }
 
         @Override
-        public void run() {
+        public void execute() {
             fileWorkObject.start();
             String size = MemoryUtils.humanReadableByteCount(fileSize);
             LOGGER.debug("Start({}, {}, {})", userId, size, fileId);
