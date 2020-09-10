@@ -310,11 +310,6 @@ public class RenameService {
                         .setReplyToMessageId(replyToMessageId));
 
                 LOGGER.debug("Finish({}, {}, {})", userId, size, newFileName);
-            } catch (Exception ex) {
-                if (checker == null || !checker.get()) {
-                    LOGGER.error(ex.getMessage(), ex);
-                    messageService.sendErrorMessage(userId, userService.getLocaleOrDefault(userId));
-                }
             } finally {
                 if (checker == null || !checker.get()) {
                     executor.complete(jobId);
@@ -359,6 +354,11 @@ public class RenameService {
         }
 
         @Override
+        public Supplier<Boolean> getCancelChecker() {
+            return null;
+        }
+
+        @Override
         public void setCanceledByUser(boolean canceledByUser) {
             this.canceledByUser = canceledByUser;
         }
@@ -366,6 +366,16 @@ public class RenameService {
         @Override
         public SmartExecutorService.JobWeight getWeight() {
             return fileSize > MemoryUtils.MB_100 ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT;
+        }
+
+        @Override
+        public long getChatId() {
+            return userId;
+        }
+
+        @Override
+        public int getProgressMessageId() {
+            return progressMessageId;
         }
     }
 }
