@@ -79,7 +79,7 @@ public class SchedulerConfiguration {
 
     @Bean
     @Qualifier("renameTaskExecutor")
-    public SmartExecutorService unzipTaskExecutor(UserService userService, FileManager fileManager,
+    public SmartExecutorService renameTaskExecutor(UserService userService, FileManager fileManager,
                                                   @Qualifier("messageLimits") MessageService messageService, LocalisationService localisationService) {
         SmartExecutorService executorService = new SmartExecutorService(messageService, localisationService, fileManager, userService);
         ThreadPoolExecutor lightTaskExecutor = new ThreadPoolExecutor(2, 2,
