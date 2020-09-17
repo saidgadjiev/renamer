@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.dao.RenameQueueDao;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
-import ru.gadjini.telegram.renamer.domain.TgFile;
+import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 

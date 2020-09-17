@@ -72,7 +72,6 @@ artifacts/
 *.tlh
 *.tmp
 *.tmp_proj
-*.log
 *.vspscc
 *.vssscc
 .builds
@@ -284,3 +283,4 @@ package.json
 package-lock.json
 node-modules/
 ImageTracer.jar
+fonts

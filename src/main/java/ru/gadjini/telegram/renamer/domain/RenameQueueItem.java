@@ -1,5 +1,7 @@
 package ru.gadjini.telegram.renamer.domain;
 
+import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
+
 public class RenameQueueItem {
 
     public static final String TYPE = "rename_queue";
