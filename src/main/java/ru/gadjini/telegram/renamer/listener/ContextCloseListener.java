@@ -7,23 +7,23 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
+import ru.gadjini.telegram.renamer.job.RenamerJob;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
-import ru.gadjini.telegram.renamer.service.rename.RenameService;
 
 @Component
 public class ContextCloseListener implements ApplicationListener<ContextClosedEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ContextCloseListener.class);
 
-    private RenameService renameService;
+    private RenamerJob renamerJob;
 
     private FileManager fileManager;
 
     private ThreadPoolTaskExecutor commonThreadPool;
 
-    public ContextCloseListener(RenameService renameService,
+    public ContextCloseListener(RenamerJob renamerJob,
                                 FileManager fileManager, @Qualifier("commonTaskExecutor") ThreadPoolTaskExecutor commonThreadPool) {
-        this.renameService = renameService;
+        this.renamerJob = renamerJob;
         this.fileManager = fileManager;
         this.commonThreadPool = commonThreadPool;
     }
@@ -31,7 +31,7 @@ public class ContextCloseListener implements ApplicationListener<ContextClosedEv
     @Override
     public void onApplicationEvent(ContextClosedEvent event) {
         try {
-            renameService.shutdown();
+            renamerJob.shutdown();
         } catch (Throwable e) {
             LOGGER.error("Error shutdown renameService. " + e.getMessage(), e);
         }

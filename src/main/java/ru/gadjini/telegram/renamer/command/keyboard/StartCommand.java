@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.gadjini.telegram.renamer.common.CommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
+import ru.gadjini.telegram.renamer.job.RenamerJob;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
 import ru.gadjini.telegram.renamer.service.rename.RenameService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
@@ -40,10 +41,12 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     private MessageMediaService fileService;
 
+    private RenamerJob renamerJob;
+
     @Autowired
     public StartCommand(LocalisationService localisationService, CommandStateService commandStateService,
                         @Qualifier("messageLimits") MessageService messageService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
-                        UserService userService, RenameService renameService, MessageMediaService fileService) {
+                        UserService userService, RenameService renameService, MessageMediaService fileService, RenamerJob renamerJob) {
         this.commandStateService = commandStateService;
         this.localisationService = localisationService;
         this.messageService = messageService;
@@ -51,6 +54,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         this.userService = userService;
         this.renameService = renameService;
         this.fileService = fileService;
+        this.renamerJob = renamerJob;
     }
 
     @Override
@@ -93,7 +97,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
             RenameState renameState = initState(message, any2AnyFile);
 
             messageService.sendMessage(new HtmlMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale)));
-            renameService.removeAndCancelCurrentTask(message.getChatId());
+            renamerJob.removeAndCancelCurrentTask(message.getChatId());
             commandStateService.setState(message.getChatId(), getHistoryName(), renameState);
         } else if (message.hasText()) {
             RenameState renameState = commandStateService.getState(message.getChatId(), getHistoryName(), true, RenameState.class);

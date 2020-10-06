@@ -25,7 +25,7 @@ public class RenameQueueService {
         renameQueueDao.resetProcessing();
     }
 
-    public RenameQueueItem createProcessingItem(int userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
+    public RenameQueueItem createItem(int userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
         RenameQueueItem renameQueueItem = new RenameQueueItem();
         renameQueueItem.setUserId(userId);
         renameQueueItem.setNewFileName(newFileName);
@@ -48,7 +48,7 @@ public class RenameQueueService {
             renameQueueItem.setThumb(thumb);
         }
 
-        renameQueueItem.setStatus(RenameQueueItem.Status.PROCESSING);
+        renameQueueItem.setStatus(RenameQueueItem.Status.WAITING);
 
         int id = renameQueueDao.create(renameQueueItem);
 

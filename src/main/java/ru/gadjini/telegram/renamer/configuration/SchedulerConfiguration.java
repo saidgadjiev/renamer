@@ -6,11 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import ru.gadjini.telegram.renamer.service.rename.RenameService;
-import ru.gadjini.telegram.smart.bot.commons.exception.botapi.TelegramApiRequestException;
+import ru.gadjini.telegram.renamer.job.RenamerJob;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
@@ -18,7 +15,7 @@ import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
 
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -30,36 +27,11 @@ public class SchedulerConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerConfiguration.class);
 
-    private RenameService renameService;
-
-    private UserService userService;
+    private RenamerJob renamerJob;
 
     @Autowired
-    public void setRenameService(RenameService renameService) {
-        this.renameService = renameService;
-    }
-
-    @Autowired
-    public void setUserService(UserService userService) {
-        this.userService = userService;
-    }
-
-    @Bean
-    public TaskScheduler jobsThreadPoolTaskScheduler() {
-        ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
-        threadPoolTaskScheduler.setPoolSize(2);
-        threadPoolTaskScheduler.setThreadNamePrefix("JobsThreadPoolTaskScheduler");
-        threadPoolTaskScheduler.setErrorHandler(ex -> {
-            if (userService.deadlock(ex)) {
-                LOGGER.debug("Blocked user({})", ((TelegramApiRequestException) ex).getChatId());
-            } else {
-                LOGGER.error(ex.getMessage(), ex);
-            }
-        });
-
-        LOGGER.debug("Jobs thread pool scheduler initialized with pool size({})", threadPoolTaskScheduler.getPoolSize());
-
-        return threadPoolTaskScheduler;
+    public void setRenameService(RenamerJob renamerJob) {
+        this.renamerJob = renamerJob;
     }
 
     @Bean
@@ -82,40 +54,17 @@ public class SchedulerConfiguration {
     public SmartExecutorService renameTaskExecutor(UserService userService, FileManager fileManager,
                                                   @Qualifier("messageLimits") MessageService messageService, LocalisationService localisationService) {
         SmartExecutorService executorService = new SmartExecutorService(messageService, localisationService, fileManager, userService);
-        ThreadPoolExecutor lightTaskExecutor = new ThreadPoolExecutor(2, 2,
-                0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(10),
-                (r, executor) -> {
-                    executorService.complete(((SmartExecutorService.Job) r).getId());
-                    renameService.rejectRenameTask((SmartExecutorService.Job) r);
-                }) {
-            @Override
-            protected void afterExecute(Runnable r, Throwable t) {
-                SmartExecutorService.Job poll = renameService.getTask(LIGHT);
-                if (poll != null) {
-                    executorService.execute(poll);
-                }
-            }
-        };
-        ThreadPoolExecutor heavyTaskExecutor = new ThreadPoolExecutor(3, 3,
-                0, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(10),
-                (r, executor) -> {
-                    executorService.complete(((SmartExecutorService.Job) r).getId());
-                    renameService.rejectRenameTask((SmartExecutorService.Job) r);
-                }) {
-            @Override
-            protected void afterExecute(Runnable r, Throwable t) {
-                SmartExecutorService.Job poll = renameService.getTask(HEAVY);
-                if (poll != null) {
-                    executorService.execute(poll);
-                }
-            }
-        };
+        ThreadPoolExecutor lightTaskExecutor = new ThreadPoolExecutor(2, 2, 0, TimeUnit.SECONDS, new SynchronousQueue<>());
+        ThreadPoolExecutor heavyTaskExecutor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.SECONDS, new SynchronousQueue<>());
 
         LOGGER.debug("Rename light thread pool({})", lightTaskExecutor.getCorePoolSize());
         LOGGER.debug("Rename heavy thread pool({})", heavyTaskExecutor.getCorePoolSize());
 
-        return executorService.setExecutors(Map.of(LIGHT, lightTaskExecutor, HEAVY, heavyTaskExecutor));
+        executorService.setExecutors(Map.of(LIGHT, lightTaskExecutor, HEAVY, heavyTaskExecutor));
+
+        executorService.setRejectJobHandler(LIGHT, job -> renamerJob.rejectRenameTask(job));
+        executorService.setRejectJobHandler(HEAVY, job -> renamerJob.rejectRenameTask(job));
+
+        return executorService;
     }
 }
