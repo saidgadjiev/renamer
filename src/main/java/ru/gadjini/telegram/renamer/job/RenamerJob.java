@@ -82,7 +82,7 @@ public class RenamerJob {
 
     @Autowired
     public RenamerJob(FileManager fileManager, TempFileService tempFileService, FormatService formatService,
-                      @Qualifier("mediaLimits") MediaMessageService mediaMessageService, RenameQueueService renameQueueService,
+                      @Qualifier("forceMedia") MediaMessageService mediaMessageService, RenameQueueService renameQueueService,
                       LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
                       CommandStateService commandStateService, UserService userService, ThumbService thumbService,
                       @Qualifier("messageLimits") MessageService messageService, RenameMessageBuilder renameMessageBuilder, FileLimitProperties fileLimitProperties) {
@@ -218,15 +218,6 @@ public class RenamerJob {
         return fileName;
     }
 
-    private void updateProgressMessageAfterFloodWait(long chatId, int progressMessageId, int id) {
-        Locale locale = userService.getLocaleOrDefault(id);
-        String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
-
-        messageService.editMessage(new EditMessageText(chatId, progressMessageId, message)
-                .setNoLogging(true)
-                .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(id, locale)));
-    }
-
     public final class RenameTask implements SmartExecutorService.Job {
 
         private final Logger LOGGER = LoggerFactory.getLogger(RenameTask.class);
@@ -302,14 +293,16 @@ public class RenamerJob {
                         LOGGER.error(e.getMessage());
                         queueService.setWaiting(jobId);
                         updateProgressMessageAfterFloodWait(userId, getProgressMessageId(), jobId);
+                    } else {
+                        throw e;
                     }
                 }
             } finally {
                 if (checker == null || !checker.get()) {
                     executor.complete(jobId);
                     if (success) {
-                        queueService.delete(jobId);
                         fileWorkObject.stop();
+                        queueService.delete(jobId);
                     }
                     if (file != null) {
                         file.smartDelete();
@@ -372,6 +365,15 @@ public class RenamerJob {
         @Override
         public int getProgressMessageId() {
             return progressMessageId;
+        }
+
+        private void updateProgressMessageAfterFloodWait(long chatId, int progressMessageId, int id) {
+            Locale locale = userService.getLocaleOrDefault(id);
+            String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
+
+            messageService.editMessage(new EditMessageText(chatId, progressMessageId, message)
+                    .setNoLogging(true)
+                    .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(id, locale)));
         }
     }
 }

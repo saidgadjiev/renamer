@@ -16,14 +16,14 @@ import java.util.List;
 @Repository
 public class RenameQueueDao {
 
-    private JdbcTemplate jdbcTemplate;
-
     private FileLimitProperties fileLimitProperties;
 
+    private JdbcTemplate jdbcTemplate;
+
     @Autowired
-    public RenameQueueDao(JdbcTemplate jdbcTemplate, FileLimitProperties fileLimitProperties) {
-        this.jdbcTemplate = jdbcTemplate;
+    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate) {
         this.fileLimitProperties = fileLimitProperties;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public int create(RenameQueueItem renameQueueItem) {
