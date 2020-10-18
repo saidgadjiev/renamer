@@ -58,11 +58,6 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
     }
 
     @Override
-    public boolean accept(Message message) {
-        return true;
-    }
-
-    @Override
     public void processMessage(Message message, String[] params) {
         processMessage0(message.getChatId(), message.getFrom().getId());
     }

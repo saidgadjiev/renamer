@@ -64,7 +64,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
     }
 
     @Override
-    public boolean accept(Message message) {
+    public boolean acceptNonCommandMessage(Message message) {
         return message.hasDocument() || message.hasPhoto();
     }
 

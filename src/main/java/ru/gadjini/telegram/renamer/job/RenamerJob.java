@@ -2,6 +2,7 @@ package ru.gadjini.telegram.renamer.job;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +19,15 @@ import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
+import ru.gadjini.telegram.smart.bot.commons.exception.DownloadCanceledException;
+import ru.gadjini.telegram.smart.bot.commons.exception.DownloadingException;
+import ru.gadjini.telegram.smart.bot.commons.exception.FloodWaitException;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendDocument;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.updatemessages.EditMessageText;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.AnswerCallbackQuery;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Progress;
+import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
@@ -73,12 +78,14 @@ public class RenamerJob {
 
     private RenameMessageBuilder renameMessageBuilder;
 
+    private FileLimitProperties fileLimitProperties;
+
     @Autowired
     public RenamerJob(FileManager fileManager, TempFileService tempFileService, FormatService formatService,
                       @Qualifier("mediaLimits") MediaMessageService mediaMessageService, RenameQueueService renameQueueService,
                       LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
                       CommandStateService commandStateService, UserService userService, ThumbService thumbService,
-                      @Qualifier("messageLimits") MessageService messageService, RenameMessageBuilder renameMessageBuilder) {
+                      @Qualifier("messageLimits") MessageService messageService, RenameMessageBuilder renameMessageBuilder, FileLimitProperties fileLimitProperties) {
         this.fileManager = fileManager;
         this.tempFileService = tempFileService;
         this.formatService = formatService;
@@ -91,6 +98,7 @@ public class RenamerJob {
         this.thumbService = thumbService;
         this.messageService = messageService;
         this.renameMessageBuilder = renameMessageBuilder;
+        this.fileLimitProperties = fileLimitProperties;
     }
 
     @Autowired
@@ -210,6 +218,15 @@ public class RenamerJob {
         return fileName;
     }
 
+    private void updateProgressMessageAfterFloodWait(long chatId, int progressMessageId, int id) {
+        Locale locale = userService.getLocaleOrDefault(id);
+        String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
+
+        messageService.editMessage(new EditMessageText(chatId, progressMessageId, message)
+                .setNoLogging(true)
+                .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(id, locale)));
+    }
+
     public final class RenameTask implements SmartExecutorService.Job {
 
         private final Logger LOGGER = LoggerFactory.getLogger(RenameTask.class);
@@ -254,6 +271,7 @@ public class RenamerJob {
             String size = MemoryUtils.humanReadableByteCount(fileSize);
             LOGGER.debug("Start({}, {}, {})", userId, size, fileId);
 
+            boolean success = false;
             try {
                 String ext = formatService.getExt(fileName, mimeType);
                 String finalFileName = createNewFileName(newFileName, ext);
@@ -273,18 +291,32 @@ public class RenamerJob {
                         .setThumb(thumbFile != null ? thumbFile.getAbsolutePath() : null)
                         .setReplyToMessageId(replyToMessageId));
 
+                success = true;
                 LOGGER.debug("Finish({}, {}, {})", userId, size, newFileName);
+            } catch (Throwable e) {
+                if (checker == null || !checker.get() || ExceptionUtils.indexOfThrowable(e, DownloadCanceledException.class) == -1) {
+                    int downloadingExceptionIndexOf = ExceptionUtils.indexOfThrowable(e, DownloadingException.class);
+                    int floodWaitExceptionIndexOf = ExceptionUtils.indexOfThrowable(e, FloodWaitException.class);
+
+                    if (downloadingExceptionIndexOf != -1 || floodWaitExceptionIndexOf != -1) {
+                        LOGGER.error(e.getMessage());
+                        queueService.setWaiting(jobId);
+                        updateProgressMessageAfterFloodWait(userId, getProgressMessageId(), jobId);
+                    }
+                }
             } finally {
                 if (checker == null || !checker.get()) {
                     executor.complete(jobId);
-                    queueService.delete(jobId);
+                    if (success) {
+                        queueService.delete(jobId);
+                        fileWorkObject.stop();
+                    }
                     if (file != null) {
                         file.smartDelete();
                     }
                     if (thumbFile != null) {
                         thumbFile.smartDelete();
                     }
-                    fileWorkObject.stop();
                 }
             }
         }
@@ -329,7 +361,7 @@ public class RenamerJob {
 
         @Override
         public SmartExecutorService.JobWeight getWeight() {
-            return fileSize > MemoryUtils.MB_100 ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT;
+            return fileSize > fileLimitProperties.getLightFileMaxWeight() ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT;
         }
 
         @Override
