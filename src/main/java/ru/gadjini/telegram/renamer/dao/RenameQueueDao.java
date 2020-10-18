@@ -7,8 +7,8 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
+import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
-import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
 
 import java.sql.*;
 import java.util.List;
@@ -16,10 +16,13 @@ import java.util.List;
 @Repository
 public class RenameQueueDao {
 
+    private FileLimitProperties fileLimitProperties;
+
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public RenameQueueDao(JdbcTemplate jdbcTemplate) {
+    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate) {
+        this.fileLimitProperties = fileLimitProperties;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -76,7 +79,7 @@ public class RenameQueueDao {
                         "SELECT *, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
                         "FROM r",
                 ps -> {
-                    ps.setLong(1, MemoryUtils.MB_100);
+                    ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
                     ps.setInt(2, limit);
                 },
                 (rs, rowNum) -> map(rs)
