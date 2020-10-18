@@ -268,7 +268,7 @@ public class RenamerJob {
                 String finalFileName = createNewFileName(newFileName, ext);
 
                 file = tempFileService.createTempFile(userId, fileId, TAG, ext);
-                fileManager.downloadFileByFileId(fileId, fileSize, progress(userId, jobId, progressMessageId, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
+                fileManager.forceDownloadFileByFileId(fileId, fileSize, progress(userId, jobId, progressMessageId, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
 
                 if (userThumb != null) {
                     thumbFile = thumbService.convertToThumb(userId, userThumb.getFileId(), userThumb.getSize(), userThumb.getFileName(), userThumb.getMimeType());
