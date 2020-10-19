@@ -271,7 +271,7 @@ public class RenamerJob {
                     commandStateService.deleteState(userId, CommandNames.SET_THUMBNAIL_COMMAND);
                 } else if (StringUtils.isNotBlank(thumb)) {
                     thumbFile = tempFileService.createTempFile(userId, fileId, TAG, Format.JPG.getExt());
-                    fileManager.downloadFileByFileId(thumb, 1, thumbFile);
+                    fileManager.forceDownloadFileByFileId(thumb, 1, thumbFile);
                 }
                 mediaMessageService.sendDocument(new SendDocument((long) userId, finalFileName, file.getFile())
                         .setProgress(progress(userId, jobId, progressMessageId, RenameStep.UPLOADING, RenameStep.COMPLETED))
@@ -282,8 +282,8 @@ public class RenamerJob {
                 LOGGER.debug("Finish({}, {}, {})", userId, size, newFileName);
             } catch (Throwable e) {
                 if (checker == null || !checker.get()) {
-                    if (FileManager.isSomethingWentWrongWithDownloadingUploading(e)) {
-                        handleDownloadingUploadingException(e);
+                    if (FileManager.isFloodWaitException(e)) {
+                        handleFloodWaitException(e);
                     } else {
                         throw e;
                     }
@@ -358,13 +358,13 @@ public class RenamerJob {
             return progressMessageId;
         }
 
-        private void handleDownloadingUploadingException(Throwable e) {
+        private void handleFloodWaitException(Throwable e) {
             LOGGER.error(e.getMessage());
             queueService.setWaiting(jobId);
-            updateProgressMessageAfterDownloadingUploadingException(userId, getProgressMessageId(), jobId);
+            updateProgressMessageAfterFloodWaitException(userId, getProgressMessageId(), jobId);
         }
 
-        private void updateProgressMessageAfterDownloadingUploadingException(long chatId, int progressMessageId, int id) {
+        private void updateProgressMessageAfterFloodWaitException(long chatId, int progressMessageId, int id) {
             Locale locale = userService.getLocaleOrDefault(id);
             String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
 
