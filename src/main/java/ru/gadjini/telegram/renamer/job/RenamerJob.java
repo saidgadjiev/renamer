@@ -2,7 +2,6 @@ package ru.gadjini.telegram.renamer.job;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +18,6 @@ import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
-import ru.gadjini.telegram.smart.bot.commons.exception.DownloadCanceledException;
-import ru.gadjini.telegram.smart.bot.commons.exception.DownloadingException;
-import ru.gadjini.telegram.smart.bot.commons.exception.FloodWaitException;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendDocument;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.updatemessages.EditMessageText;
@@ -285,14 +281,9 @@ public class RenamerJob {
                 success = true;
                 LOGGER.debug("Finish({}, {}, {})", userId, size, newFileName);
             } catch (Throwable e) {
-                if (checker == null || !checker.get() || ExceptionUtils.indexOfThrowable(e, DownloadCanceledException.class) == -1) {
-                    int downloadingExceptionIndexOf = ExceptionUtils.indexOfThrowable(e, DownloadingException.class);
-                    int floodWaitExceptionIndexOf = ExceptionUtils.indexOfThrowable(e, FloodWaitException.class);
-
-                    if (downloadingExceptionIndexOf != -1 || floodWaitExceptionIndexOf != -1) {
-                        LOGGER.error(e.getMessage());
-                        queueService.setWaiting(jobId);
-                        updateProgressMessageAfterFloodWait(userId, getProgressMessageId(), jobId);
+                if (checker == null || !checker.get()) {
+                    if (FileManager.isSomethingWentWrongWithDownloadingUploading(e)) {
+                        handleDownloadingUploadingException(e);
                     } else {
                         throw e;
                     }
@@ -367,7 +358,13 @@ public class RenamerJob {
             return progressMessageId;
         }
 
-        private void updateProgressMessageAfterFloodWait(long chatId, int progressMessageId, int id) {
+        private void handleDownloadingUploadingException(Throwable e) {
+            LOGGER.error(e.getMessage());
+            queueService.setWaiting(jobId);
+            updateProgressMessageAfterDownloadingUploadingException(userId, getProgressMessageId(), jobId);
+        }
+
+        private void updateProgressMessageAfterDownloadingUploadingException(long chatId, int progressMessageId, int id) {
             Locale locale = userService.getLocaleOrDefault(id);
             String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
 
