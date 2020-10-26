@@ -282,8 +282,8 @@ public class RenamerJob {
                 LOGGER.debug("Finish({}, {}, {})", userId, size, newFileName);
             } catch (Throwable e) {
                 if (checker == null || !checker.get()) {
-                    if (FileManager.isFloodWaitException(e)) {
-                        handleFloodWaitException(e);
+                    if (FileManager.isNoneCriticalDownloadingException(e)) {
+                        handleNoneCriticalDownloadingException();
                     } else {
                         throw e;
                     }
@@ -358,8 +358,7 @@ public class RenamerJob {
             return progressMessageId;
         }
 
-        private void handleFloodWaitException(Throwable e) {
-            LOGGER.error(e.getMessage());
+        private void handleNoneCriticalDownloadingException() {
             queueService.setWaiting(jobId);
             updateProgressMessageAfterFloodWaitException(userId, getProgressMessageId(), jobId);
         }
