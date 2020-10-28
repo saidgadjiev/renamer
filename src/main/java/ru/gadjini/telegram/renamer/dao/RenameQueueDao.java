@@ -92,15 +92,42 @@ public class RenameQueueDao {
 
     public RenameQueueItem deleteWithReturning(int id) {
         return jdbcTemplate.query(
-                "WITH del AS(DELETE FROM rename_queue WHERE id = ? RETURNING *) SELECT * FROM del",
+                "WITH del AS(DELETE FROM rename_queue WHERE id = ? RETURNING *) SELECT (file).size, id FROM del",
                 ps -> ps.setInt(1, id),
-                rs -> rs.next() ? map(rs) : null
+                rs -> {
+                    if (rs.next()) {
+                        RenameQueueItem queueItem = new RenameQueueItem();
+
+                        queueItem.setId(rs.getInt(RenameQueueItem.ID));
+
+                        TgFile tgFile = new TgFile();
+                        tgFile.setSize(rs.getLong(TgFile.SIZE));
+
+                        return queueItem;
+                    }
+
+                    return null;
+                }
         );
     }
 
     public RenameQueueItem deleteByUserId(int userId) {
-        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? RETURNING id) SELECT * FROM r",
-                ps -> ps.setInt(1, userId), rs -> rs.next() ? map(rs) : null);
+        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? RETURNING *) SELECT id, (file).size FROM r",
+                ps -> ps.setInt(1, userId),
+                rs -> {
+                    if (rs.next()) {
+                        RenameQueueItem queueItem = new RenameQueueItem();
+
+                        queueItem.setId(rs.getInt(RenameQueueItem.ID));
+
+                        TgFile tgFile = new TgFile();
+                        tgFile.setSize(rs.getLong(TgFile.SIZE));
+
+                        return queueItem;
+                    }
+
+                    return null;
+                });
     }
 
     public Boolean exists(int jobId) {
