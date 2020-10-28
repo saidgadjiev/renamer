@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.CommandNames;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
@@ -56,7 +56,7 @@ public class ViewThumbnailCommand implements BotCommand {
 
     @Override
     public void processMessage(Message message, String[] params) {
-        MessageMedia thumbnail = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
+        MessageMedia thumbnail = commandStateService.getState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
         if (thumbnail != null) {
             if (StringUtils.isNotBlank(thumbnail.getCachedFileId())) {
                 mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), thumbnail.getCachedFileId()));
@@ -66,7 +66,7 @@ public class ViewThumbnailCommand implements BotCommand {
                     try {
                         SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), tempFile.getFile()));
                         thumbnail.setCachedFileId(sendFileResult.getFileId());
-                        commandStateService.setState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, thumbnail);
+                        commandStateService.setState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, thumbnail);
                     } finally {
                         tempFile.smartDelete();
                     }
@@ -79,7 +79,7 @@ public class ViewThumbnailCommand implements BotCommand {
 
     @Override
     public String getCommandIdentifier() {
-        return CommandNames.VIEW_THUMBNAIL_COMMAND;
+        return RenameCommandNames.VIEW_THUMBNAIL_COMMAND;
     }
 
     private void thumbNotFound(Message message) {

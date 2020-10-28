@@ -18,6 +18,8 @@ public class RenameQueueItem {
 
     public static final String PROGRESS_MESSAGE_ID = "progress_message_id";
 
+    public static final String PLACE_IN_QUEUE = "place_in_queue";
+
     private int id;
 
     private TgFile file;
@@ -33,6 +35,8 @@ public class RenameQueueItem {
     private int progressMessageId;
 
     private Status status;
+
+    private int queuePosition;
 
     public int getId() {
         return id;
@@ -96,6 +100,14 @@ public class RenameQueueItem {
 
     public void setProgressMessageId(int progressMessageId) {
         this.progressMessageId = progressMessageId;
+    }
+
+    public int getQueuePosition() {
+        return queuePosition;
+    }
+
+    public void setQueuePosition(int queuePosition) {
+        this.queuePosition = queuePosition;
     }
 
     public enum Status {

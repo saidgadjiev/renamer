@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.CommandNames;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
@@ -82,7 +82,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
 
         if (any2AnyFile != null) {
             validate(message.getFrom().getId(), any2AnyFile, locale);
-            commandStateService.setState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, any2AnyFile);
+            commandStateService.setState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, any2AnyFile);
             CommandNavigator.SilentPop silentPop = commandNavigator.silentPop(message.getChatId());
             messageService.sendMessage(new HtmlMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_ADDED, locale) +
                     "\n\n" + silentPop.getMessage())
@@ -92,17 +92,17 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
 
     @Override
     public String getCommandIdentifier() {
-        return CommandNames.SET_THUMBNAIL_COMMAND;
+        return RenameCommandNames.SET_THUMBNAIL_COMMAND;
     }
 
     @Override
     public String getParentCommandName(long chatId) {
-        return CommandNames.START_COMMAND;
+        return RenameCommandNames.START_COMMAND;
     }
 
     @Override
     public String getHistoryName() {
-        return CommandNames.SET_THUMBNAIL_COMMAND;
+        return RenameCommandNames.SET_THUMBNAIL_COMMAND;
     }
 
     @Override

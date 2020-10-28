@@ -8,16 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
-import ru.gadjini.telegram.renamer.common.CommandNames;
-import ru.gadjini.telegram.renamer.common.MessagesProperties;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
+import ru.gadjini.telegram.renamer.service.progress.Lang;
 import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
-import ru.gadjini.telegram.smart.bot.commons.service.ProgressManager;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
@@ -53,14 +52,15 @@ public class RenameService {
 
     private UserService userService;
 
-    private ProgressManager progressManager;
+    private RenameMessageBuilder messageBuilder;
 
     @Autowired
     public RenameService(FileManager fileManager, FormatService formatService,
                          @Qualifier("messageLimits") MessageService messageService,
                          @Qualifier("mediaLimits") MediaMessageService mediaMessageService, RenameQueueService renameQueueService,
                          LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
-                         CommandStateService commandStateService, UserService userService, ProgressManager progressManager) {
+                         CommandStateService commandStateService, UserService userService,
+                         RenameMessageBuilder messageBuilder) {
         this.fileManager = fileManager;
         this.formatService = formatService;
         this.messageService = messageService;
@@ -70,11 +70,11 @@ public class RenameService {
         this.inlineKeyboardService = inlineKeyboardService;
         this.commandStateService = commandStateService;
         this.userService = userService;
-        this.progressManager = progressManager;
+        this.messageBuilder = messageBuilder;
     }
 
     public void rename(int userId, RenameState renameState, String newFileName) {
-        MessageMedia thumb = commandStateService.getState(userId, CommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
+        MessageMedia thumb = commandStateService.getState(userId, RenameCommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
         if (isTheSameFileName(renameState.getFile().getFileName(), renameState.getFile().getMimeType(), newFileName)
                 && thumb == null) {
             mediaMessageService.sendFile(userId, renameState.getFile().getFileId());
@@ -82,24 +82,19 @@ public class RenameService {
             return;
         }
         RenameQueueItem item = renameQueueService.createItem(userId, renameState, thumb, newFileName);
-        sendStartRenamingMessage(item.getId(), userId, renameState.getFile().getFileSize(), message -> {
+        sendStartRenamingMessage(item, message -> {
             item.setProgressMessageId(message.getMessageId());
             renameQueueService.setProgressMessageId(item.getId(), message.getMessageId());
             fileManager.setInputFilePending(userId, renameState.getReplyMessageId(), renameState.getFile().getFileId(), renameState.getFile().getFileSize(), TAG);
         });
     }
 
-    private void sendStartRenamingMessage(int jobId, int userId, long fileSize, Consumer<Message> callback) {
-        Locale locale = userService.getLocaleOrDefault(userId);
-        if (progressManager.isShowingDownloadingProgress(fileSize)) {
-            String message = localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
-            messageService.sendMessage(new SendMessage((long) userId, message)
-                    .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(jobId, locale)), callback);
-        } else {
-            String message = localisationService.getMessage(MessagesProperties.MESSAGE_RENAMING, locale);
-            messageService.sendMessage(new SendMessage((long) userId, message)
-                    .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(jobId, locale)), callback);
-        }
+    private void sendStartRenamingMessage(RenameQueueItem queueItem, Consumer<Message> callback) {
+        Locale locale = userService.getLocaleOrDefault(queueItem.getUserId());
+
+        String message = messageBuilder.buildMessage(queueItem, RenameStep.WAITING, Lang.JAVA, locale);
+        messageService.sendMessage(new SendMessage((long) queueItem.getUserId(), message)
+                .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale)), callback);
     }
 
     private String createNewFileName(String fileName, String ext) {

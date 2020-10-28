@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.CommandNames;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
@@ -17,7 +17,6 @@ import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
 import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
-import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendDocument;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.updatemessages.EditMessageText;
@@ -177,16 +176,16 @@ public class RenamerJob {
         executor.shutdown();
     }
 
-    private Progress progress(long chatId, int jobId, int processMessageId, RenameStep renameStep, RenameStep nextStep) {
+    private Progress progress(long chatId, RenameQueueItem queueItem, RenameStep renameStep, RenameStep nextStep) {
         Locale locale = userService.getLocaleOrDefault((int) chatId);
         Progress progress = new Progress();
         progress.setLocale(locale.getLanguage());
         progress.setChatId(chatId);
-        progress.setProgressMessageId(processMessageId);
-        progress.setProgressMessage(renameMessageBuilder.buildRenamingMessage(renameStep, locale, Lang.PYTHON));
+        progress.setProgressMessageId(queueItem.getProgressMessageId());
+        progress.setProgressMessage(renameMessageBuilder.buildMessage(queueItem, renameStep, Lang.PYTHON, locale));
         if (nextStep != null) {
             String calculated = localisationService.getMessage(MessagesProperties.MESSAGE_CALCULATED, locale);
-            String completionMessage = renameMessageBuilder.buildRenamingMessage(nextStep, locale, Lang.JAVA);
+            String completionMessage = renameMessageBuilder.buildMessage(queueItem, nextStep, Lang.JAVA, locale);
             String seconds = localisationService.getMessage(MessagesProperties.SECOND_PART, locale);
             if (nextStep == RenameStep.RENAMING) {
                 progress.setAfterProgressCompletionMessage(String.format(completionMessage, 50, "7 " + seconds));
@@ -194,10 +193,10 @@ public class RenamerJob {
                 progress.setAfterProgressCompletionMessage(String.format(completionMessage, 0, calculated, calculated));
             }
             if (nextStep != RenameStep.COMPLETED) {
-                progress.setAfterProgressCompletionReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(jobId, locale));
+                progress.setAfterProgressCompletionReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale));
             }
         }
-        progress.setProgressReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(jobId, locale));
+        progress.setProgressReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale));
 
         return progress;
     }
@@ -220,66 +219,47 @@ public class RenamerJob {
 
         private static final String TAG = "rename";
 
-        private int jobId;
-        private final int userId;
-        private final String fileName;
-        private final String newFileName;
-        private final String mimeType;
-        private final String fileId;
-        private long fileSize;
-        private final int replyToMessageId;
-        private final int progressMessageId;
+        private final RenameQueueItem queueItem;
         private volatile Supplier<Boolean> checker;
         private volatile boolean canceledByUser;
         private volatile SmartTempFile file;
         private volatile SmartTempFile thumbFile;
-        private TgFile userThumb;
-        private String thumb;
         private FileWorkObject fileWorkObject;
 
         private RenameTask(RenameQueueItem queueItem) {
-            this.jobId = queueItem.getId();
-            this.userId = queueItem.getUserId();
-            this.fileName = queueItem.getFile().getFileName();
-            this.newFileName = queueItem.getNewFileName();
-            this.mimeType = queueItem.getFile().getMimeType();
-            this.fileId = queueItem.getFile().getFileId();
-            this.fileSize = queueItem.getFile().getSize();
-            this.replyToMessageId = queueItem.getReplyToMessageId();
-            this.thumb = queueItem.getFile().getThumb();
-            this.userThumb = queueItem.getThumb();
-            this.fileWorkObject = fileManager.fileWorkObject(userId, fileSize);
-            this.progressMessageId = queueItem.getProgressMessageId();
+            this.queueItem = queueItem;
+            this.fileWorkObject = fileManager.fileWorkObject(queueItem.getId(), queueItem.getFile().getSize());
         }
 
         @Override
         public void execute() {
             fileWorkObject.start();
-            String size = MemoryUtils.humanReadableByteCount(fileSize);
-            LOGGER.debug("Start({}, {}, {})", userId, size, fileId);
+            String size = MemoryUtils.humanReadableByteCount(queueItem.getFile().getSize());
+            LOGGER.debug("Start({}, {}, {})", queueItem.getUserId(), size, queueItem.getFile().getFileId());
 
             boolean success = false;
             try {
-                String ext = formatService.getExt(fileName, mimeType);
-                String finalFileName = createNewFileName(newFileName, ext);
+                String ext = formatService.getExt(queueItem.getFile().getFileName(), queueItem.getFile().getMimeType());
+                String finalFileName = createNewFileName(queueItem.getNewFileName(), ext);
 
-                file = tempFileService.createTempFile(userId, fileId, TAG, ext);
-                fileManager.forceDownloadFileByFileId(fileId, fileSize, progress(userId, jobId, progressMessageId, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
+                file = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, ext);
+                fileManager.forceDownloadFileByFileId(queueItem.getFile().getFileId(), queueItem.getFile().getSize(),
+                        progress(queueItem.getUserId(), queueItem, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
 
-                if (userThumb != null) {
-                    thumbFile = thumbService.convertToThumb(userId, userThumb.getFileId(), userThumb.getSize(), userThumb.getFileName(), userThumb.getMimeType());
-                    commandStateService.deleteState(userId, CommandNames.SET_THUMBNAIL_COMMAND);
-                } else if (StringUtils.isNotBlank(thumb)) {
-                    thumbFile = tempFileService.createTempFile(userId, fileId, TAG, Format.JPG.getExt());
-                    fileManager.forceDownloadFileByFileId(thumb, 1, thumbFile);
+                if (queueItem.getThumb() != null) {
+                    thumbFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize(), queueItem.getThumb().getFileName(), queueItem.getThumb().getMimeType());
+                    commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
+                } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
+                    thumbFile = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
+                    fileManager.forceDownloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile);
                 }
-                mediaMessageService.sendDocument(new SendDocument((long) userId, finalFileName, file.getFile())
-                        .setProgress(progress(userId, jobId, progressMessageId, RenameStep.UPLOADING, RenameStep.COMPLETED))
+                mediaMessageService.sendDocument(new SendDocument((long) queueItem.getUserId(), finalFileName, file.getFile())
+                        .setProgress(progress(queueItem.getUserId(), queueItem, RenameStep.UPLOADING, RenameStep.COMPLETED))
                         .setThumb(thumbFile != null ? thumbFile.getAbsolutePath() : null)
-                        .setReplyToMessageId(replyToMessageId));
+                        .setReplyToMessageId(queueItem.getReplyToMessageId()));
 
                 success = true;
-                LOGGER.debug("Finish({}, {}, {})", userId, size, newFileName);
+                LOGGER.debug("Finish({}, {}, {})", queueItem.getUserId(), size, queueItem.getNewFileName());
             } catch (Throwable e) {
                 if (checker == null || !checker.get()) {
                     if (FileManager.isNoneCriticalDownloadingException(e)) {
@@ -290,10 +270,10 @@ public class RenamerJob {
                 }
             } finally {
                 if (checker == null || !checker.get()) {
-                    executor.complete(jobId);
+                    executor.complete(queueItem.getId());
                     if (success) {
                         fileWorkObject.stop();
-                        queueService.delete(jobId);
+                        queueService.delete(queueItem.getId());
                     }
                     if (file != null) {
                         file.smartDelete();
@@ -307,24 +287,24 @@ public class RenamerJob {
 
         @Override
         public int getId() {
-            return jobId;
+            return queueItem.getId();
         }
 
         @Override
         public void cancel() {
-            if (!fileManager.cancelDownloading(fileId) && file != null) {
+            if (!fileManager.cancelDownloading(queueItem.getFile().getFileId()) && file != null) {
                 file.smartDelete();
             }
             if (file != null && !fileManager.cancelUploading(file.getAbsolutePath())) {
                 file.smartDelete();
             }
-            if (!fileManager.cancelDownloading(thumb) && thumbFile != null) {
+            if (!fileManager.cancelDownloading(queueItem.getThumb().getFileId()) && thumbFile != null) {
                 thumbFile.smartDelete();
             }
             if (canceledByUser) {
-                queueService.delete(jobId);
+                queueService.delete(queueItem.getId());
                 fileWorkObject.stop();
-                LOGGER.debug("Canceled by user({}, {})", userId, MemoryUtils.humanReadableByteCount(fileSize));
+                LOGGER.debug("Canceled by user({}, {})", queueItem.getUserId(), MemoryUtils.humanReadableByteCount(queueItem.getFile().getSize()));
             }
         }
 
@@ -345,22 +325,22 @@ public class RenamerJob {
 
         @Override
         public SmartExecutorService.JobWeight getWeight() {
-            return fileSize > fileLimitProperties.getLightFileMaxWeight() ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT;
+            return queueItem.getFile().getSize() > fileLimitProperties.getLightFileMaxWeight() ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT;
         }
 
         @Override
         public long getChatId() {
-            return userId;
+            return queueItem.getUserId();
         }
 
         @Override
         public int getProgressMessageId() {
-            return progressMessageId;
+            return queueItem.getProgressMessageId();
         }
 
         private void handleNoneCriticalDownloadingException() {
-            queueService.setWaiting(jobId);
-            updateProgressMessageAfterFloodWaitException(userId, getProgressMessageId(), jobId);
+            queueService.setWaiting(queueItem.getId());
+            updateProgressMessageAfterFloodWaitException(queueItem.getUserId(), getProgressMessageId(), queueItem.getId());
         }
 
         private void updateProgressMessageAfterFloodWaitException(long chatId, int progressMessageId, int id) {

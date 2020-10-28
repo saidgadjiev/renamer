@@ -3,7 +3,7 @@ package ru.gadjini.telegram.renamer.command.bot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.CommandNames;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
@@ -38,11 +38,11 @@ public class DeleteThumbnailCommand implements BotCommand {
 
     @Override
     public void processMessage(Message message, String[] params) {
-        MessageMedia thumb = commandStateService.getState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
+        MessageMedia thumb = commandStateService.getState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
 
         if (thumb != null) {
-            commandStateService.deleteState(message.getChatId(), CommandNames.SET_THUMBNAIL_COMMAND);
+            commandStateService.deleteState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             messageService.sendMessage(new SendMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_DELETED, locale)));
         } else {
             messageService.sendMessage(new SendMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_NOT_FOUND, locale)));
@@ -51,6 +51,6 @@ public class DeleteThumbnailCommand implements BotCommand {
 
     @Override
     public String getCommandIdentifier() {
-        return CommandNames.DEL_THUMBNAIL_COMMAND;
+        return RenameCommandNames.DEL_THUMBNAIL_COMMAND;
     }
 }

@@ -2,7 +2,7 @@ package ru.gadjini.telegram.renamer.command.callback;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.gadjini.telegram.renamer.common.CommandNames;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.job.RenamerJob;
 import ru.gadjini.telegram.renamer.request.Arg;
 import ru.gadjini.telegram.smart.bot.commons.command.api.CallbackBotCommand;
@@ -21,7 +21,7 @@ public class CancelRenameQueryCommand implements CallbackBotCommand {
 
     @Override
     public String getName() {
-        return CommandNames.CANCEL_RENAME_QUERY;
+        return RenameCommandNames.CANCEL_RENAME_QUERY;
     }
 
     @Override

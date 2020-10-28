@@ -3,7 +3,7 @@ package ru.gadjini.telegram.renamer.command.keyboard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.CommandNames;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.job.RenamerJob;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
@@ -64,7 +64,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     @Override
     public String getCommandIdentifier() {
-        return CommandNames.START_COMMAND;
+        return RenameCommandNames.START_COMMAND;
     }
 
     private void processMessage0(long chatId, int userId) {
@@ -75,12 +75,12 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     @Override
     public String getParentCommandName(long chatId) {
-        return CommandNames.START_COMMAND;
+        return RenameCommandNames.START_COMMAND;
     }
 
     @Override
     public String getHistoryName() {
-        return CommandNames.START_COMMAND;
+        return RenameCommandNames.START_COMMAND;
     }
 
     @Override
@@ -100,13 +100,13 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
                 throw new UserException(localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale));
             }
             renameService.rename(message.getFrom().getId(), renameState, text);
-            commandStateService.deleteState(message.getChatId(), CommandNames.START_COMMAND);
+            commandStateService.deleteState(message.getChatId(), RenameCommandNames.START_COMMAND);
         }
     }
 
     @Override
     public void restore(TgMessage message) {
-        RenameState renameState = commandStateService.getState(message.getChatId(), CommandNames.START_COMMAND, false, RenameState.class);
+        RenameState renameState = commandStateService.getState(message.getChatId(), RenameCommandNames.START_COMMAND, false, RenameState.class);
         Locale locale = userService.getLocaleOrDefault(message.getUser().getId());
         String msg = localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale);
         if (renameState != null) {
@@ -122,7 +122,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     @Override
     public String getMessage(long chatId) {
-        RenameState renameState = commandStateService.getState(chatId, CommandNames.START_COMMAND, false, RenameState.class);
+        RenameState renameState = commandStateService.getState(chatId, RenameCommandNames.START_COMMAND, false, RenameState.class);
         Locale locale = userService.getLocaleOrDefault((int) chatId);
         String msg = localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale);
         if (renameState != null) {
@@ -137,7 +137,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         renameState.setReplyMessageId(message.getMessageId());
         renameState.setFile(any2AnyFile);
 
-        commandStateService.setState(message.getChatId(), CommandNames.START_COMMAND, renameState);
+        commandStateService.setState(message.getChatId(), RenameCommandNames.START_COMMAND, renameState);
 
         return renameState;
     }

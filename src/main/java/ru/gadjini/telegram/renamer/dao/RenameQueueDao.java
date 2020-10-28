@@ -76,7 +76,7 @@ public class RenameQueueDao {
                         "    UPDATE rename_queue SET status = 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 " +
                         "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ? ORDER BY created_at LIMIT ?) RETURNING *\n" +
                         ")\n" +
-                        "SELECT *, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
+                        "SELECT *, 1 as place_in_queue, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
                         "FROM r",
                 ps -> {
                     ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
@@ -130,12 +130,72 @@ public class RenameQueueDao {
                 });
     }
 
+    public Integer getPlaceInQueue(int id, SmartExecutorService.JobWeight weight) {
+        return jdbcTemplate.query(
+                "SELECT COALESCE(place_in_queue, 1) as place_in_queue\n" +
+                        "FROM (SELECT id, row_number() over (ORDER BY created_at) AS place_in_queue\n" +
+                        "      FROM rename_queue \n" +
+                        "      WHERE status = 0 AND file.size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        ") as file_q\n" +
+                        "WHERE id = ?",
+                ps -> {
+                    ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
+                    ps.setInt(2, id);
+                },
+                rs -> {
+                    if (rs.next()) {
+                        return rs.getInt(RenameQueueItem.PLACE_IN_QUEUE);
+                    }
+
+                    return 1;
+                }
+        );
+    }
+
     public Boolean exists(int jobId) {
         return jdbcTemplate.query("SELECT TRUE FROM rename_queue WHERE id = ?", ps -> ps.setInt(1, jobId), ResultSet::next);
     }
 
     public Boolean existsByReplyToMessageId(int messageId) {
         return jdbcTemplate.query("SELECT TRUE FROM rename_queue WHERE reply_to_message_id = ?", ps -> ps.setInt(1, messageId), ResultSet::next);
+    }
+
+    public SmartExecutorService.JobWeight getWeight(int id) {
+        Long size = jdbcTemplate.query(
+                "SELECT file.size FROM rename_queue WHERE id = ?",
+                ps -> ps.setInt(1, id),
+                rs -> rs.next() ? rs.getLong("size") : null
+        );
+
+        return size == null ? null : size > fileLimitProperties.getLightFileMaxWeight() ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT;
+    }
+
+    public RenameQueueItem getById(int id) {
+        SmartExecutorService.JobWeight weight = getWeight(id);
+
+        if (weight == null) {
+            return null;
+        }
+        return jdbcTemplate.query(
+                "SELECT f.*, COALESCE(queue_place.place_in_queue, 1) as place_in_queue\n" +
+                        "FROM rename_queue f\n" +
+                        "         LEFT JOIN (SELECT id, row_number() over (ORDER BY created_at) as place_in_queue\n" +
+                        "                     FROM rename_queue\n" +
+                        "      WHERE status = 0 AND file.size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        ") queue_place ON f.id = queue_place.id\n" +
+                        "WHERE f.id = ?\n",
+                ps -> {
+                    ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
+                    ps.setInt(2, id);
+                },
+                rs -> {
+                    if (rs.next()) {
+                        return map(rs);
+                    }
+
+                    return null;
+                }
+        );
     }
 
     private RenameQueueItem map(ResultSet resultSet) throws SQLException {
@@ -163,6 +223,8 @@ public class RenameQueueDao {
         item.setReplyToMessageId(resultSet.getInt(RenameQueueItem.REPLY_TO_MESSAGE_ID));
         item.setProgressMessageId(resultSet.getInt(RenameQueueItem.PROGRESS_MESSAGE_ID));
         item.setUserId(resultSet.getInt(RenameQueueItem.USER_ID));
+
+        item.setQueuePosition(resultSet.getInt(RenameQueueItem.PLACE_IN_QUEUE));
 
         return item;
     }

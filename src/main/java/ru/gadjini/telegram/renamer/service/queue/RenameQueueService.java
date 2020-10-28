@@ -7,6 +7,7 @@ import ru.gadjini.telegram.renamer.dao.RenameQueueDao;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
+import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 
 import java.util.List;
@@ -16,9 +17,12 @@ public class RenameQueueService {
 
     private RenameQueueDao renameQueueDao;
 
+    private FileLimitProperties fileLimitProperties;
+
     @Autowired
-    public RenameQueueService(RenameQueueDao renameQueueDao) {
+    public RenameQueueService(RenameQueueDao renameQueueDao, FileLimitProperties fileLimitProperties) {
         this.renameQueueDao = renameQueueDao;
+        this.fileLimitProperties = fileLimitProperties;
     }
 
     public void resetProcessing() {
@@ -52,6 +56,9 @@ public class RenameQueueService {
 
         int id = renameQueueDao.create(renameQueueItem);
 
+        renameQueueItem.setQueuePosition(renameQueueDao.getPlaceInQueue(id,
+                renameQueueItem.getFile().getSize() > fileLimitProperties.getLightFileMaxWeight()
+                        ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT));
         renameQueueItem.setId(id);
 
         return renameQueueItem;
@@ -93,5 +100,9 @@ public class RenameQueueService {
 
     public boolean existsByToReplyMessageId(int replyToMessageId) {
         return renameQueueDao.exists(replyToMessageId);
+    }
+
+    public RenameQueueItem getById(int id) {
+        return renameQueueDao.getById(id);
     }
 }

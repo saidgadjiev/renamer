@@ -1,14 +1,12 @@
 package ru.gadjini.telegram.renamer.common;
 
-public class CommandNames {
+public class RenameCommandNames {
 
-    private CommandNames() {
+    private RenameCommandNames() {
 
     }
 
     public static final String START_COMMAND = "start";
-
-    public static final String GET_FILE_COMMAND = "getfile";
 
     public static final String HELP_COMMAND = "help";
 
@@ -21,4 +19,7 @@ public class CommandNames {
     public static final String DEL_THUMBNAIL_COMMAND = "delthumb";
 
     public static final String VIEW_THUMBNAIL_COMMAND = "viewthumb";
+
+    public static final String UPDATE_QUERY_STATUS = "updq";
+
 }

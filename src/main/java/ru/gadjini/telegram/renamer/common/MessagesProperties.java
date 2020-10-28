@@ -60,4 +60,13 @@ public class MessagesProperties {
     public static final String VIEW_THUMB_COMMAND_DESCRIPTION = "view.thumb.command.description";
 
     public static final String DEL_THUMB_COMMAND_DESCRIPTION = "del.thumb.command.description";
+
+    public static final String MESSAGE_FILE_QUEUED = "message.file.queued";
+
+    public static final String WAITING_STEP = "waiting.step";
+
+    public static final String UPDATE_QUERY_STATUS_COMMAND_DESCRIPTION = "update.query.status.command.description";
+
+    public static final String UPDATED_CALLBACK_ANSWER = "updated.callback.answer";
+
 }
