@@ -10,8 +10,6 @@ import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 
-import java.util.List;
-
 @Service
 public class RenameQueueService {
 
@@ -23,10 +21,6 @@ public class RenameQueueService {
     public RenameQueueService(RenameQueueDao renameQueueDao, FileLimitProperties fileLimitProperties) {
         this.renameQueueDao = renameQueueDao;
         this.fileLimitProperties = fileLimitProperties;
-    }
-
-    public void resetProcessing() {
-        renameQueueDao.resetProcessing();
     }
 
     public RenameQueueItem createItem(int userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
@@ -56,53 +50,11 @@ public class RenameQueueService {
 
         int id = renameQueueDao.create(renameQueueItem);
 
-        renameQueueItem.setQueuePosition(renameQueueDao.getPlaceInQueue(id,
+        renameQueueItem.setQueuePosition(renameQueueDao.getQueuePosition(id,
                 renameQueueItem.getFile().getSize() > fileLimitProperties.getLightFileMaxWeight()
                         ? SmartExecutorService.JobWeight.HEAVY : SmartExecutorService.JobWeight.LIGHT));
         renameQueueItem.setId(id);
 
         return renameQueueItem;
-    }
-
-    public void setWaiting(int id) {
-        renameQueueDao.setWaiting(id);
-    }
-
-    public void setProgressMessageId(int id, int progressMessageId) {
-        renameQueueDao.setProgressMessageId(id, progressMessageId);
-    }
-
-    public RenameQueueItem poll(SmartExecutorService.JobWeight weight) {
-        List<RenameQueueItem> poll = renameQueueDao.poll(weight, 1);
-
-        return poll.isEmpty() ? null : poll.iterator().next();
-    }
-
-    public List<RenameQueueItem> poll(SmartExecutorService.JobWeight weight, int limit) {
-        return renameQueueDao.poll(weight, limit);
-    }
-
-    public void delete(int id) {
-        renameQueueDao.delete(id);
-    }
-
-    public RenameQueueItem deleteWithReturning(int id) {
-        return renameQueueDao.deleteWithReturning(id);
-    }
-
-    public RenameQueueItem deleteByUserId(int userId) {
-        return renameQueueDao.deleteByUserId(userId);
-    }
-
-    public boolean exists(int jobId) {
-        return renameQueueDao.exists(jobId);
-    }
-
-    public boolean existsByToReplyMessageId(int replyToMessageId) {
-        return renameQueueDao.exists(replyToMessageId);
-    }
-
-    public RenameQueueItem getById(int id) {
-        return renameQueueDao.getById(id);
     }
 }
