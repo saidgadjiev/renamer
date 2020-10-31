@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
 import ru.gadjini.telegram.renamer.service.progress.Lang;
@@ -42,7 +42,7 @@ import java.util.Locale;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
 
-@Component
+//@Component
 public class RenamerJob {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RenamerJob.class);
@@ -263,8 +263,10 @@ public class RenamerJob {
             } catch (Throwable e) {
                 if (checker == null || !checker.get()) {
                     if (FileManager.isNoneCriticalDownloadingException(e)) {
-                        handleNoneCriticalDownloadingException();
+                        handleNoneCriticalDownloadingException(e);
                     } else {
+                        queueService.setExceptionStatus(queueItem.getId(), e);
+
                         throw e;
                     }
                 }
@@ -315,7 +317,7 @@ public class RenamerJob {
 
         @Override
         public Supplier<Boolean> getCancelChecker() {
-            return null;
+            return checker;
         }
 
         @Override
@@ -338,8 +340,18 @@ public class RenamerJob {
             return queueItem.getProgressMessageId();
         }
 
-        private void handleNoneCriticalDownloadingException() {
-            queueService.setWaiting(queueItem.getId());
+        @Override
+        public boolean isSuppressUserExceptions() {
+            return queueItem.isSuppressUserExceptions();
+        }
+
+        @Override
+        public Integer getReplyToMessageId() {
+            return queueItem.getReplyToMessageId();
+        }
+
+        private void handleNoneCriticalDownloadingException(Throwable e) {
+            queueService.setWaiting(queueItem.getId(), e);
             updateProgressMessageAfterFloodWaitException(queueItem.getUserId(), getProgressMessageId(), queueItem.getId());
         }
 

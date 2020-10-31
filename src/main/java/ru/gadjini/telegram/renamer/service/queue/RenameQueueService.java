@@ -1,5 +1,6 @@
 package ru.gadjini.telegram.renamer.service.queue;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
@@ -91,7 +92,7 @@ public class RenameQueueService {
     }
 
     public RenameQueueItem deleteByUserId(int userId) {
-        return renameQueueDao.deleteByUserId(userId);
+        return renameQueueDao.deleteProcessingOrWaitingByUserId(userId);
     }
 
     public boolean exists(int jobId) {
@@ -104,5 +105,15 @@ public class RenameQueueService {
 
     public RenameQueueItem getById(int id) {
         return renameQueueDao.getById(id);
+    }
+
+    public void setExceptionStatus(int id, Throwable ex) {
+        String exception = ExceptionUtils.getMessage(ex) + "\n" + ExceptionUtils.getStackTrace(ex);
+        renameQueueDao.setExceptionStatus(id, exception);
+    }
+
+    public void setWaiting(int id, Throwable ex) {
+        String exception = ExceptionUtils.getMessage(ex) + "\n" + ExceptionUtils.getStackTrace(ex);
+        renameQueueDao.setWaiting(id, exception);
     }
 }

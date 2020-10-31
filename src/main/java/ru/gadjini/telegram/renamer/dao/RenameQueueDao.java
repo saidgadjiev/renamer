@@ -58,6 +58,17 @@ public class RenameQueueDao {
                 ps -> ps.setInt(1, id));
     }
 
+    public void setWaiting(int id, String exception) {
+        jdbcTemplate.update(
+                "UPDATE rename_queue SET exception = ?, status = ? WHERE id = ?",
+                ps -> {
+                    ps.setString(1, exception);
+                    ps.setInt(2, RenameQueueItem.Status.WAITING.getCode());
+                    ps.setInt(3, id);
+                }
+        );
+    }
+
     public void setProgressMessageId(int id, int progressMessageId) {
         jdbcTemplate.update("UPDATE rename_queue SET progress_message_id = ? WHERE id = ?",
                 ps -> {
@@ -73,7 +84,7 @@ public class RenameQueueDao {
     public List<RenameQueueItem> poll(SmartExecutorService.JobWeight weight, int limit) {
         return jdbcTemplate.query(
                 "WITH r AS (\n" +
-                        "    UPDATE rename_queue SET status = 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 " +
+                        "    UPDATE rename_queue SET status = 1, started_at = now() WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 " +
                         "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ? ORDER BY created_at LIMIT ?) RETURNING *\n" +
                         ")\n" +
                         "SELECT *, 1 as place_in_queue, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
@@ -111,8 +122,8 @@ public class RenameQueueDao {
         );
     }
 
-    public RenameQueueItem deleteByUserId(int userId) {
-        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? RETURNING *) SELECT id, (file).size FROM r",
+    public RenameQueueItem deleteProcessingOrWaitingByUserId(int userId) {
+        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? AND status IN(0, 1) RETURNING *) SELECT id, (file).size FROM r",
                 ps -> ps.setInt(1, userId),
                 rs -> {
                     if (rs.next()) {
@@ -135,7 +146,7 @@ public class RenameQueueDao {
                 "SELECT COALESCE(place_in_queue, 1) as place_in_queue\n" +
                         "FROM (SELECT id, row_number() over (ORDER BY created_at) AS place_in_queue\n" +
                         "      FROM rename_queue \n" +
-                        "      WHERE status = 0 AND file.size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        "      WHERE status = 0 AND (file).size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
                         ") as file_q\n" +
                         "WHERE id = ?",
                 ps -> {
@@ -162,7 +173,7 @@ public class RenameQueueDao {
 
     public SmartExecutorService.JobWeight getWeight(int id) {
         Long size = jdbcTemplate.query(
-                "SELECT file.size FROM rename_queue WHERE id = ?",
+                "SELECT (file).size FROM rename_queue WHERE id = ?",
                 ps -> ps.setInt(1, id),
                 rs -> rs.next() ? rs.getLong("size") : null
         );
@@ -181,7 +192,7 @@ public class RenameQueueDao {
                         "FROM rename_queue f\n" +
                         "         LEFT JOIN (SELECT id, row_number() over (ORDER BY created_at) as place_in_queue\n" +
                         "                     FROM rename_queue\n" +
-                        "      WHERE status = 0 AND file.size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        "      WHERE status = 0 AND (file).size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
                         ") queue_place ON f.id = queue_place.id\n" +
                         "WHERE f.id = ?\n",
                 ps -> {
@@ -194,6 +205,17 @@ public class RenameQueueDao {
                     }
 
                     return null;
+                }
+        );
+    }
+
+    public void setExceptionStatus(int id, String exception) {
+        jdbcTemplate.update(
+                "UPDATE rename_queue SET exception = ?, status = ?, suppress_user_exceptions = TRUE WHERE id = ?",
+                ps -> {
+                    ps.setString(1, exception);
+                    ps.setInt(2, RenameQueueItem.Status.EXCEPTION.getCode());
+                    ps.setInt(3, id);
                 }
         );
     }
@@ -225,6 +247,7 @@ public class RenameQueueDao {
         item.setUserId(resultSet.getInt(RenameQueueItem.USER_ID));
 
         item.setQueuePosition(resultSet.getInt(RenameQueueItem.PLACE_IN_QUEUE));
+        item.setSuppressUserExceptions(resultSet.getBoolean(RenameQueueItem.SUPPRESS_USER_EXCEPTIONS));
 
         return item;
     }

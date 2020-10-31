@@ -20,6 +20,8 @@ public class RenameQueueItem {
 
     public static final String PLACE_IN_QUEUE = "place_in_queue";
 
+    public static final String SUPPRESS_USER_EXCEPTIONS = "suppress_user_exceptions";
+
     private int id;
 
     private TgFile file;
@@ -37,6 +39,8 @@ public class RenameQueueItem {
     private Status status;
 
     private int queuePosition;
+
+    private boolean suppressUserExceptions;
 
     public int getId() {
         return id;
@@ -110,12 +114,22 @@ public class RenameQueueItem {
         this.queuePosition = queuePosition;
     }
 
+    public boolean isSuppressUserExceptions() {
+        return suppressUserExceptions;
+    }
+
+    public void setSuppressUserExceptions(boolean suppressUserExceptions) {
+        this.suppressUserExceptions = suppressUserExceptions;
+    }
+
     public enum Status {
 
 
         WAITING(0),
 
-        PROCESSING(1);
+        PROCESSING(1),
+
+        EXCEPTION(2);
 
         private final int code;
 

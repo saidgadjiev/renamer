@@ -14,6 +14,7 @@ import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
 import ru.gadjini.telegram.renamer.service.progress.Lang;
 import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
+import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
@@ -93,7 +94,7 @@ public class RenameService {
         Locale locale = userService.getLocaleOrDefault(queueItem.getUserId());
 
         String message = messageBuilder.buildMessage(queueItem, RenameStep.WAITING, Lang.JAVA, locale);
-        messageService.sendMessage(new SendMessage((long) queueItem.getUserId(), message)
+        messageService.sendMessage(new HtmlMessage((long) queueItem.getUserId(), message)
                 .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale)), callback);
     }
 
