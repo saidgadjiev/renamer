@@ -95,7 +95,7 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
 
     public SmartExecutorService.JobWeight getWeight(int id) {
         Long size = jdbcTemplate.query(
-                "SELECT file.size FROM rename_queue WHERE id = ?",
+                "SELECT (file).size FROM rename_queue WHERE id = ?",
                 ps -> ps.setInt(1, id),
                 rs -> rs.next() ? rs.getLong("size") : null
         );
@@ -111,7 +111,7 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
             return null;
         }
         return jdbcTemplate.query(
-                "SELECT f.*, COALESCE(queue_place.queue_position, 1) as queue_position\n" +
+                "SELECT f.*, (f.file).*, COALESCE(queue_place.queue_position, 1) as queue_position\n" +
                         "FROM rename_queue f\n" +
                         "         LEFT JOIN (SELECT id, row_number() over (ORDER BY created_at) as queue_position\n" +
                         "                     FROM rename_queue\n" +
