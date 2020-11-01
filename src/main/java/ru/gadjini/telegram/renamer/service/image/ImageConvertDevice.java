@@ -1,4 +1,4 @@
-package ru.gadjini.telegram.renamer.service.image.device;
+package ru.gadjini.telegram.renamer.service.image;
 
 public interface ImageConvertDevice {
 

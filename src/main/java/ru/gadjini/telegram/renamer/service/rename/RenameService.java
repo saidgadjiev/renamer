@@ -17,13 +17,13 @@ import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
-import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
+import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueService;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -43,9 +43,9 @@ public class RenameService {
 
     private MediaMessageService mediaMessageService;
 
-    private RenameQueueService renameQueueService;
+    private QueueService queueService;
 
-    private LocalisationService localisationService;
+    private RenameQueueService renameQueueService;
 
     private InlineKeyboardService inlineKeyboardService;
 
@@ -58,16 +58,17 @@ public class RenameService {
     @Autowired
     public RenameService(FileManager fileManager, FormatService formatService,
                          @Qualifier("messageLimits") MessageService messageService,
-                         @Qualifier("mediaLimits") MediaMessageService mediaMessageService, RenameQueueService renameQueueService,
-                         LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
+                         @Qualifier("mediaLimits") MediaMessageService mediaMessageService, QueueService queueService,
+                         RenameQueueService renameQueueService,
+                         InlineKeyboardService inlineKeyboardService,
                          CommandStateService commandStateService, UserService userService,
                          RenameMessageBuilder messageBuilder) {
         this.fileManager = fileManager;
         this.formatService = formatService;
         this.messageService = messageService;
         this.mediaMessageService = mediaMessageService;
+        this.queueService = queueService;
         this.renameQueueService = renameQueueService;
-        this.localisationService = localisationService;
         this.inlineKeyboardService = inlineKeyboardService;
         this.commandStateService = commandStateService;
         this.userService = userService;
@@ -85,7 +86,7 @@ public class RenameService {
         RenameQueueItem item = renameQueueService.createItem(userId, renameState, thumb, newFileName);
         sendStartRenamingMessage(item, message -> {
             item.setProgressMessageId(message.getMessageId());
-            renameQueueService.setProgressMessageId(item.getId(), message.getMessageId());
+            queueService.setProgressMessageId(item.getId(), message.getMessageId());
             fileManager.setInputFilePending(userId, renameState.getReplyMessageId(), renameState.getFile().getFileId(), renameState.getFile().getFileSize(), TAG);
         });
     }

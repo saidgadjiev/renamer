@@ -2,7 +2,7 @@ package ru.gadjini.telegram.renamer.service.thumb;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.gadjini.telegram.renamer.service.image.device.ImageConvertDevice;
+import ru.gadjini.telegram.renamer.service.image.ImageConvertDevice;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;

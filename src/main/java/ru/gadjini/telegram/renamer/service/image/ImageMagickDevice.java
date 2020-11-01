@@ -1,4 +1,4 @@
-package ru.gadjini.telegram.renamer.service.image.device;
+package ru.gadjini.telegram.renamer.service.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

@@ -9,7 +9,6 @@ import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.request.Arg;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
 import ru.gadjini.telegram.renamer.service.progress.Lang;
-import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
 import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.smart.bot.commons.command.api.CallbackBotCommand;
@@ -19,6 +18,7 @@ import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.CallbackQuery;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
+import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueService;
 import ru.gadjini.telegram.smart.bot.commons.service.request.RequestParams;
 import ru.gadjini.telegram.smart.bot.commons.utils.TextUtils;
 
@@ -30,7 +30,7 @@ public class UpdateQueryStatusCommand implements CallbackBotCommand {
 
     private RenameMessageBuilder messageBuilder;
 
-    private RenameQueueService queueService;
+    private QueueService queueService;
 
     private UserService userService;
 
@@ -42,7 +42,7 @@ public class UpdateQueryStatusCommand implements CallbackBotCommand {
 
     @Autowired
     public UpdateQueryStatusCommand(RenameMessageBuilder messageBuilder,
-                                    RenameQueueService queueService, UserService userService,
+                                    QueueService queueService, UserService userService,
                                     @Qualifier("messageLimits") MessageService messageService,
                                     InlineKeyboardService inlineKeyboardService, LocalisationService localisationService) {
         this.messageBuilder = messageBuilder;
@@ -62,7 +62,7 @@ public class UpdateQueryStatusCommand implements CallbackBotCommand {
     public void processMessage(CallbackQuery callbackQuery, RequestParams requestParams) {
         int queryItemId = requestParams.getInt(Arg.JOB_ID.getKey());
         Locale locale = userService.getLocaleOrDefault(callbackQuery.getFrom().getId());
-        RenameQueueItem queueItem = queueService.getById(queryItemId);
+        RenameQueueItem queueItem = (RenameQueueItem) queueService.getById(queryItemId);
         if (queueItem == null) {
             messageService.editMessage(
                     new EditMessageText(callbackQuery.getMessage().getChatId(), callbackQuery.getMessage().getMessageId(),
