@@ -15,11 +15,9 @@ import ru.gadjini.telegram.renamer.service.progress.Lang;
 import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
-import ru.gadjini.telegram.smart.bot.commons.domain.QueueItem;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendDocument;
 import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Progress;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.InlineKeyboardMarkup;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
@@ -28,13 +26,14 @@ import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
 import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
-import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueJobDelegate;
+import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorker;
+import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorkerFactory;
 import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
 
 import java.util.Locale;
 
 @Component
-public class RenamerJobDelegate implements QueueJobDelegate {
+public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueItem> {
 
     private FileManager fileManager;
 
@@ -57,11 +56,11 @@ public class RenamerJobDelegate implements QueueJobDelegate {
     private RenameMessageBuilder renameMessageBuilder;
 
     @Autowired
-    public RenamerJobDelegate(FileManager fileManager, TempFileService tempFileService, FormatService formatService,
-                              @Qualifier("forceMedia") MediaMessageService mediaMessageService,
-                              LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
-                              CommandStateService commandStateService, UserService userService, ThumbService thumbService,
-                              RenameMessageBuilder renameMessageBuilder) {
+    public RenameQueueWorkerFactory(FileManager fileManager, TempFileService tempFileService, FormatService formatService,
+                                    @Qualifier("forceMedia") MediaMessageService mediaMessageService,
+                                    LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
+                                    CommandStateService commandStateService, UserService userService, ThumbService thumbService,
+                                    RenameMessageBuilder renameMessageBuilder) {
         this.fileManager = fileManager;
         this.tempFileService = tempFileService;
         this.formatService = formatService;
@@ -75,8 +74,8 @@ public class RenamerJobDelegate implements QueueJobDelegate {
     }
 
     @Override
-    public WorkerTaskDelegate mapWorker(QueueItem queueItem) {
-        return new RenameTask((RenameQueueItem) queueItem);
+    public QueueWorker createWorker(RenameQueueItem queueItem) {
+        return new RenameQueueWorker(queueItem);
     }
 
     private Progress progress(long chatId, RenameQueueItem queueItem, RenameStep renameStep, RenameStep nextStep) {
@@ -116,9 +115,9 @@ public class RenamerJobDelegate implements QueueJobDelegate {
         return fileName;
     }
 
-    public final class RenameTask implements WorkerTaskDelegate {
+    public final class RenameQueueWorker implements QueueWorker {
 
-        private final Logger LOGGER = LoggerFactory.getLogger(RenameTask.class);
+        private final Logger LOGGER = LoggerFactory.getLogger(RenameQueueWorker.class);
 
         private static final String TAG = "rename";
 
@@ -128,7 +127,7 @@ public class RenamerJobDelegate implements QueueJobDelegate {
 
         private volatile SmartTempFile thumbFile;
 
-        private RenameTask(RenameQueueItem queueItem) {
+        private RenameQueueWorker(RenameQueueItem queueItem) {
             this.queueItem = queueItem;
         }
 
@@ -180,21 +179,6 @@ public class RenamerJobDelegate implements QueueJobDelegate {
             if (thumbFile != null) {
                 thumbFile.smartDelete();
             }
-        }
-
-        @Override
-        public String getWaitingMessage(QueueItem queueItem, Locale locale) {
-            return localisationService.getMessage(MessagesProperties.MESSAGE_AWAITING_PROCESSING, locale);
-        }
-
-        @Override
-        public InlineKeyboardMarkup getWaitingKeyboard(QueueItem queueItem, Locale locale) {
-            return inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale);
-        }
-
-        @Override
-        public boolean shouldBeDeletedAfterCompleted() {
-            return true;
         }
     }
 }

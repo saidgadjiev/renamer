@@ -9,8 +9,6 @@ public class MessagesProperties {
 
     public static final String GO_BACK_COMMAND_NAME = "go.back.command.name";
 
-    public static final String MESSAGE_QUERY_CANCELED = "message.query.canceled";
-
     public static final String MESSAGE_QUERY_ITEM_NOT_FOUND = "message.query.item.not.found";
 
     public static final String SECOND_PART = "second.part";
@@ -18,8 +16,6 @@ public class MessagesProperties {
     public static final String MESSAGE_RENAME_FILE = "message.rename.file";
 
     public static final String MESSAGE_NEW_FILE_NAME = "message.new.file.name";
-
-    public static final String MESSAGE_RENAMING = "message.renaming";
 
     public static final String CANCEL_COMMAND_DESCRIPTION = "cancel.command.description";
 
@@ -50,8 +46,6 @@ public class MessagesProperties {
     public static final String MESSAGE_ETA = "message.eta";
 
     public static final String MESSAGE_CALCULATED = "message.calculated";
-
-    public static final String MESSAGE_AWAITING_PROCESSING = "message.awaiting.processing";
 
     public static final String MESSAGE_SPEED = "message.speed";
 
