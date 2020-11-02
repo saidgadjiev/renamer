@@ -63,4 +63,6 @@ public class MessagesProperties {
 
     public static final String UPDATED_CALLBACK_ANSWER = "updated.callback.answer";
 
+    public static final String MESSAGE_DONT_SEND_NEW_REQUEST = "message.dont.send.new.request";
+
 }

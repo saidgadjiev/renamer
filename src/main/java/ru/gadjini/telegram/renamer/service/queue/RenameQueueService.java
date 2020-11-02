@@ -2,6 +2,7 @@ package ru.gadjini.telegram.renamer.service.queue;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.dao.RenameQueueDao;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
@@ -23,6 +24,7 @@ public class RenameQueueService {
         this.fileLimitProperties = fileLimitProperties;
     }
 
+    @Transactional
     public RenameQueueItem createItem(int userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
         RenameQueueItem renameQueueItem = new RenameQueueItem();
         renameQueueItem.setUserId(userId);

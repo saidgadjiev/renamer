@@ -27,8 +27,8 @@ public class RenameMessageBuilder {
         StringBuilder message = new StringBuilder();
 
         message.append(localisationService.getMessage(MessagesProperties.MESSAGE_FILE_QUEUED, new Object[]{queueItem.getQueuePosition()}, locale)).append("\n\n");
-
-        message.append(buildRenamingMessage(renameStep, queueItem.getSize(), lang, locale));
+        message.append(buildRenamingMessage(renameStep, queueItem.getSize(), lang, locale)).append("\n\n");
+        message.append(localisationService.getMessage(MessagesProperties.MESSAGE_DONT_SEND_NEW_REQUEST, locale));
 
         return message.toString();
     }

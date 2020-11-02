@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Repository;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.dao.QueueDaoDelegate;
@@ -76,7 +77,7 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
                 "SELECT COALESCE(queue_position, 1) as queue_position\n" +
                         "FROM (SELECT id, row_number() over (ORDER BY created_at) AS queue_position\n" +
                         "      FROM rename_queue \n" +
-                        "      WHERE status = 0 AND file.size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        "      WHERE status = 0 AND (file).size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
                         ") as file_q\n" +
                         "WHERE id = ?",
                 ps -> {
@@ -111,11 +112,11 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
             return null;
         }
         return jdbcTemplate.query(
-                "SELECT f.*, (f.file).*, COALESCE(queue_place.queue_position, 1) as queue_position\n" +
+                "SELECT f.*, (f.file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type, COALESCE(queue_place.queue_position, 1) as queue_position\n" +
                         "FROM rename_queue f\n" +
                         "         LEFT JOIN (SELECT id, row_number() over (ORDER BY created_at) as queue_position\n" +
                         "                     FROM rename_queue\n" +
-                        "      WHERE status = 0 AND file.size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        "      WHERE status = 0 AND (file).size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
                         ") queue_place ON f.id = queue_place.id\n" +
                         "WHERE f.id = ?\n",
                 ps -> {
