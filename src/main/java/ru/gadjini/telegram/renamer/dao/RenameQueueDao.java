@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Repository;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.dao.QueueDaoDelegate;
