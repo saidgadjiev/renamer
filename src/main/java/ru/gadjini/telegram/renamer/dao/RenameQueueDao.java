@@ -62,7 +62,7 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
     public List<RenameQueueItem> poll(SmartExecutorService.JobWeight weight, int limit) {
         return jdbcTemplate.query(
                 "WITH r AS (\n" +
-                        "    UPDATE rename_queue SET status = 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 AND attempts < ? " +
+                        "    UPDATE rename_queue SET status = 1, attempts = attempts + 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 AND attempts < ? " +
                         "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ? ORDER BY created_at LIMIT ?) RETURNING *\n" +
                         ")\n" +
                         "SELECT *, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
