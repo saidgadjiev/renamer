@@ -9,6 +9,7 @@ import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.dao.QueueDaoDelegate;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
+import ru.gadjini.telegram.smart.bot.commons.property.QueueProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 
 import java.sql.*;
@@ -21,10 +22,13 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
 
     private JdbcTemplate jdbcTemplate;
 
+    private QueueProperties queueProperties;
+
     @Autowired
-    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate) {
+    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate, QueueProperties queueProperties) {
         this.fileLimitProperties = fileLimitProperties;
         this.jdbcTemplate = jdbcTemplate;
+        this.queueProperties = queueProperties;
     }
 
     public int create(RenameQueueItem renameQueueItem) {
@@ -58,14 +62,15 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
     public List<RenameQueueItem> poll(SmartExecutorService.JobWeight weight, int limit) {
         return jdbcTemplate.query(
                 "WITH r AS (\n" +
-                        "    UPDATE rename_queue SET status = 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 " +
+                        "    UPDATE rename_queue SET status = 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 AND attempts < ? " +
                         "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ? ORDER BY created_at LIMIT ?) RETURNING *\n" +
                         ")\n" +
                         "SELECT *, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
                         "FROM r",
                 ps -> {
-                    ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
-                    ps.setInt(2, limit);
+                    ps.setLong(1, queueProperties.getMaxAttempts());
+                    ps.setLong(2, fileLimitProperties.getLightFileMaxWeight());
+                    ps.setInt(3, limit);
                 },
                 (rs, rowNum) -> map(rs)
         );
