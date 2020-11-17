@@ -2,7 +2,8 @@ package ru.gadjini.telegram.renamer.service.keyboard;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import ru.gadjini.telegram.smart.bot.commons.service.keyboard.SmartButtonFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,17 +12,17 @@ import java.util.Locale;
 @Service
 public class InlineKeyboardService {
 
-    private ButtonFactory buttonFactory;
+    private SmartButtonFactory buttonFactory;
 
     @Autowired
-    public InlineKeyboardService(ButtonFactory buttonFactory) {
+    public InlineKeyboardService(SmartButtonFactory buttonFactory) {
         this.buttonFactory = buttonFactory;
     }
 
     public InlineKeyboardMarkup getRenameProcessingKeyboard(int jobId, Locale locale) {
         InlineKeyboardMarkup inlineKeyboardMarkup = inlineKeyboardMarkup();
 
-        inlineKeyboardMarkup.getKeyboard().add(List.of(buttonFactory.cancelRenameQuery(jobId, locale)));
+        inlineKeyboardMarkup.getKeyboard().add(List.of(buttonFactory.cancelQueryItem(jobId, locale)));
 
         return inlineKeyboardMarkup;
     }
@@ -30,7 +31,7 @@ public class InlineKeyboardService {
         InlineKeyboardMarkup inlineKeyboardMarkup = inlineKeyboardMarkup();
 
         inlineKeyboardMarkup.getKeyboard().add(List.of(buttonFactory.updateQueryStatus(jobId, locale)));
-        inlineKeyboardMarkup.getKeyboard().add(List.of(buttonFactory.cancelRenameQuery(jobId, locale)));
+        inlineKeyboardMarkup.getKeyboard().add(List.of(buttonFactory.cancelQueryItem(jobId, locale)));
 
         return inlineKeyboardMarkup;
     }

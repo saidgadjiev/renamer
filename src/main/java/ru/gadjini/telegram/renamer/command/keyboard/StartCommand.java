@@ -3,6 +3,10 @@ package ru.gadjini.telegram.renamer.command.keyboard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
@@ -13,9 +17,6 @@ import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
 import ru.gadjini.telegram.smart.bot.commons.job.QueueJob;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.TgMessage;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboard;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.MessageMediaService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
@@ -41,12 +42,12 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     private MessageMediaService fileService;
 
-    private QueueJob renamerJob;
+    private QueueJob queueJob;
 
     @Autowired
     public StartCommand(LocalisationService localisationService, CommandStateService commandStateService,
                         @Qualifier("messageLimits") MessageService messageService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
-                        UserService userService, RenameService renameService, MessageMediaService fileService, QueueJob renamerJob) {
+                        UserService userService, RenameService renameService, MessageMediaService fileService, QueueJob queueJob) {
         this.commandStateService = commandStateService;
         this.localisationService = localisationService;
         this.messageService = messageService;
@@ -54,7 +55,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         this.userService = userService;
         this.renameService = renameService;
         this.fileService = fileService;
-        this.renamerJob = renamerJob;
+        this.queueJob = queueJob;
     }
 
     @Override
@@ -69,8 +70,10 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     private void processMessage0(long chatId, int userId) {
         Locale locale = userService.getLocaleOrDefault(userId);
-        messageService.sendMessage(new HtmlMessage(chatId, localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale))
-                .setReplyMarkup(replyKeyboardService.removeKeyboard(chatId)));
+        messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(chatId))
+                .text(localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale))
+                .parseMode(ParseMode.HTML)
+                .replyMarkup(replyKeyboardService.removeKeyboard(chatId)).build());
     }
 
     @Override
@@ -91,8 +94,10 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         if (any2AnyFile != null) {
             RenameState renameState = initState(message, any2AnyFile);
 
-            messageService.sendMessage(new HtmlMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale)));
-            renamerJob.removeAndCancelCurrentTasks(message.getChatId());
+            messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(message.getChatId()))
+                    .text(localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale))
+                    .parseMode(ParseMode.HTML).build());
+            queueJob.removeAndCancelCurrentTasks(message.getChatId());
             commandStateService.setState(message.getChatId(), getHistoryName(), renameState);
         } else if (message.hasText()) {
             RenameState renameState = commandStateService.getState(message.getChatId(), getHistoryName(), true, RenameState.class);
@@ -112,7 +117,9 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         if (renameState != null) {
             msg = localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale);
         }
-        messageService.sendMessage(new HtmlMessage(message.getChatId(), msg).setReplyMarkup(replyKeyboardService.removeKeyboard(message.getChatId())));
+        messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(message.getChatId()))
+                .parseMode(ParseMode.HTML)
+                .text(msg).replyMarkup(replyKeyboardService.removeKeyboard(message.getChatId())).build());
     }
 
     @Override

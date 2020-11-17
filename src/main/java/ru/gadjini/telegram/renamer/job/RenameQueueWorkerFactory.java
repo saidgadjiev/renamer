@@ -7,17 +7,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
-import ru.gadjini.telegram.renamer.service.progress.Lang;
 import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendDocument;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Progress;
+import ru.gadjini.telegram.smart.bot.commons.model.Progress;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
@@ -84,10 +84,10 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
         progress.setLocale(locale.getLanguage());
         progress.setChatId(chatId);
         progress.setProgressMessageId(queueItem.getProgressMessageId());
-        progress.setProgressMessage(renameMessageBuilder.buildMessage(queueItem, renameStep, Lang.PYTHON, locale));
+        progress.setProgressMessage(renameMessageBuilder.buildMessage(queueItem, renameStep, locale));
         if (nextStep != null) {
             String calculated = localisationService.getMessage(MessagesProperties.MESSAGE_CALCULATED, locale);
-            String completionMessage = renameMessageBuilder.buildMessage(queueItem, nextStep, Lang.JAVA, locale);
+            String completionMessage = renameMessageBuilder.buildMessage(queueItem, nextStep, locale);
             String seconds = localisationService.getMessage(MessagesProperties.SECOND_PART, locale);
             if (nextStep == RenameStep.RENAMING) {
                 progress.setAfterProgressCompletionMessage(String.format(completionMessage, 50, "7 " + seconds));
@@ -140,7 +140,7 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
             String finalFileName = createNewFileName(queueItem.getNewFileName(), ext);
 
             file = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, ext);
-            fileManager.forceDownloadFileByFileId(queueItem.getFile().getFileId(), queueItem.getFile().getSize(),
+            fileManager.downloadFileByFileId(queueItem.getFile().getFileId(), queueItem.getFile().getSize(),
                     progress(queueItem.getUserId(), queueItem, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
 
             if (queueItem.getThumb() != null) {
@@ -148,12 +148,15 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
                 commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
                 thumbFile = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
-                fileManager.forceDownloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile);
+                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile, true);
             }
-            mediaMessageService.sendDocument(new SendDocument((long) queueItem.getUserId(), finalFileName, file.getFile())
-                    .setProgress(progress(queueItem.getUserId(), queueItem, RenameStep.UPLOADING, RenameStep.COMPLETED))
-                    .setThumb(thumbFile != null ? thumbFile.getAbsolutePath() : null)
-                    .setReplyToMessageId(queueItem.getReplyToMessageId()));
+            SendDocument.SendDocumentBuilder documentBuilder = SendDocument.builder().chatId(String.valueOf(queueItem.getUserId()))
+                    .document(new InputFile(file.getFile(), finalFileName));
+            if (thumbFile != null) {
+                documentBuilder.thumb(new InputFile(thumbFile.getFile()));
+            }
+            mediaMessageService.sendDocument(documentBuilder.replyToMessageId(queueItem.getReplyToMessageId()).build(),
+                    progress(queueItem.getUserId(), queueItem, RenameStep.UPLOADING, RenameStep.COMPLETED));
 
             LOGGER.debug("Finish({}, {}, {})", queueItem.getUserId(), size, queueItem.getNewFileName());
         }

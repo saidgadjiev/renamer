@@ -2,10 +2,10 @@ package ru.gadjini.telegram.renamer.service.keyboard;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import ru.gadjini.telegram.smart.bot.commons.dao.command.keyboard.ReplyKeyboardDao;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboard;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboardMarkup;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.ReplyKeyboardRemove;
 
 import java.util.Locale;
 
@@ -45,7 +45,7 @@ public class CurrReplyKeyboard implements RenamerReplyKeyboardService {
     @Override
     public ReplyKeyboardRemove removeKeyboard(long chatId) {
         ReplyKeyboardRemove replyKeyboardRemove = keyboardService.removeKeyboard(chatId);
-        setCurrentKeyboard(chatId, new ReplyKeyboardMarkup());
+        setCurrentKeyboard(chatId, replyKeyboardMarkup());
 
         return replyKeyboardRemove;
     }

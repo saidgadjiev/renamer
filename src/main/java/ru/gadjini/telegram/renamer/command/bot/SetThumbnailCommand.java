@@ -5,16 +5,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.RenameCommandNames;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.MessageMediaService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
@@ -71,8 +71,9 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
     @Override
     public void processMessage(Message message, String[] params) {
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
-        messageService.sendMessage(new SendMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_SEND_THUMB, locale))
-                .setReplyMarkup(replyKeyboardService.cancel(message.getChatId(), locale)));
+        messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(message.getChatId()))
+                .text(localisationService.getMessage(MessagesProperties.MESSAGE_SEND_THUMB, locale))
+                .replyMarkup(replyKeyboardService.cancel(message.getChatId(), locale)).build());
     }
 
     @Override
@@ -84,9 +85,12 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
             validate(message.getFrom().getId(), any2AnyFile, locale);
             commandStateService.setState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, any2AnyFile);
             CommandNavigator.SilentPop silentPop = commandNavigator.silentPop(message.getChatId());
-            messageService.sendMessage(new HtmlMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_ADDED, locale) +
-                    "\n\n" + silentPop.getMessage())
-                    .setReplyMarkup(silentPop.getReplyKeyboardMarkup()));
+            messageService.sendMessage(SendMessage.builder()
+                    .chatId(String.valueOf(message.getChatId()))
+                    .text(localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_ADDED, locale) +
+                            "\n\n" + silentPop.getMessage())
+                    .parseMode(ParseMode.HTML)
+                    .replyMarkup(silentPop.getReplyKeyboardMarkup()).build());
         }
     }
 

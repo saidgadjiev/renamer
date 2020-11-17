@@ -7,18 +7,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
-import ru.gadjini.telegram.renamer.service.progress.Lang;
 import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.HtmlMessage;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
-import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
@@ -30,11 +29,7 @@ import java.util.function.Consumer;
 @Service
 public class RenameService {
 
-    private static final String TAG = "rn";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(RenameService.class);
-
-    private FileManager fileManager;
 
     private FormatService formatService;
 
@@ -55,14 +50,13 @@ public class RenameService {
     private RenameMessageBuilder messageBuilder;
 
     @Autowired
-    public RenameService(FileManager fileManager, FormatService formatService,
+    public RenameService(FormatService formatService,
                          @Qualifier("messageLimits") MessageService messageService,
                          @Qualifier("mediaLimits") MediaMessageService mediaMessageService, QueueService queueService,
                          RenameQueueService renameQueueService,
                          InlineKeyboardService inlineKeyboardService,
                          CommandStateService commandStateService, UserService userService,
                          RenameMessageBuilder messageBuilder) {
-        this.fileManager = fileManager;
         this.formatService = formatService;
         this.messageService = messageService;
         this.mediaMessageService = mediaMessageService;
@@ -86,16 +80,16 @@ public class RenameService {
         sendStartRenamingMessage(item, message -> {
             item.setProgressMessageId(message.getMessageId());
             queueService.setProgressMessageId(item.getId(), message.getMessageId());
-            fileManager.setInputFilePending(userId, renameState.getReplyMessageId(), renameState.getFile().getFileId(), renameState.getFile().getFileSize(), TAG);
-        });
+         });
     }
 
     private void sendStartRenamingMessage(RenameQueueItem queueItem, Consumer<Message> callback) {
         Locale locale = userService.getLocaleOrDefault(queueItem.getUserId());
 
-        String message = messageBuilder.buildMessage(queueItem, RenameStep.WAITING, Lang.JAVA, locale);
-        messageService.sendMessage(new HtmlMessage((long) queueItem.getUserId(), message)
-                .setReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale)), callback);
+        String message = messageBuilder.buildMessage(queueItem, RenameStep.WAITING, locale);
+        messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(queueItem.getUserId())).text(message)
+                .parseMode(ParseMode.HTML)
+                .replyMarkup(inlineKeyboardService.getRenameWaitingKeyboard(queueItem.getId(), locale)).build(), callback);
     }
 
     private String createNewFileName(String fileName, String ext) {

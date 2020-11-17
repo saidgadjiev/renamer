@@ -2,12 +2,11 @@ package ru.gadjini.telegram.renamer.job;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
-import ru.gadjini.telegram.renamer.service.progress.Lang;
 import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.replykeyboard.InlineKeyboardMarkup;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueJobConfigurator;
 
 import java.util.Locale;
@@ -27,7 +26,7 @@ public class RenameQueueJobConfigurator implements QueueJobConfigurator<RenameQu
 
     @Override
     public String getWaitingMessage(RenameQueueItem queueItem, Locale locale) {
-        return renameMessageBuilder.buildMessage(queueItem, RenameStep.WAITING, Lang.JAVA, locale);
+        return renameMessageBuilder.buildMessage(queueItem, RenameStep.WAITING, locale);
     }
 
     @Override

@@ -9,8 +9,6 @@ public class MessagesProperties {
 
     public static final String GO_BACK_COMMAND_NAME = "go.back.command.name";
 
-    public static final String MESSAGE_QUERY_ITEM_NOT_FOUND = "message.query.item.not.found";
-
     public static final String SECOND_PART = "second.part";
 
     public static final String MESSAGE_RENAME_FILE = "message.rename.file";
@@ -35,7 +33,7 @@ public class MessagesProperties {
 
     public static final String MESSAGE_THUMB_DELETED = "message.thumb.deleted";
 
-    public static final String MESSAGE_PROCESSING_STEP = "message.processing.step";
+    public static final String MESSAGE_PROCESSING_STEP = "message.downloading.step";
 
     public static final String MESSAGE_RENAMING_STEP_TWO = "message.renaming.step";
 
@@ -43,11 +41,7 @@ public class MessagesProperties {
 
     public static final String ICON_CHECK = "icon.check";
 
-    public static final String MESSAGE_ETA = "message.eta";
-
     public static final String MESSAGE_CALCULATED = "message.calculated";
-
-    public static final String MESSAGE_SPEED = "message.speed";
 
     public static final String SET_THUMB_COMMAND_DESCRIPTION = "set.thumb.command.description";
 
@@ -58,10 +52,6 @@ public class MessagesProperties {
     public static final String MESSAGE_FILE_QUEUED = "message.file.queued";
 
     public static final String WAITING_STEP = "waiting.step";
-
-    public static final String UPDATE_QUERY_STATUS_COMMAND_DESCRIPTION = "update.query.status.command.description";
-
-    public static final String UPDATED_CALLBACK_ANSWER = "updated.callback.answer";
 
     public static final String MESSAGE_DONT_SEND_NEW_REQUEST = "message.dont.send.new.request";
 

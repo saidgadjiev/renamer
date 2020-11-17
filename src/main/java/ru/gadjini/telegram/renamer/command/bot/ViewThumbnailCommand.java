@@ -5,16 +5,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-import ru.gadjini.telegram.renamer.common.RenameCommandNames;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
+import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.SendFileResult;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendMessage;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.method.send.SendPhoto;
-import ru.gadjini.telegram.smart.bot.commons.model.bot.api.object.Message;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
@@ -59,12 +60,12 @@ public class ViewThumbnailCommand implements BotCommand {
         MessageMedia thumbnail = commandStateService.getState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, false, MessageMedia.class);
         if (thumbnail != null) {
             if (StringUtils.isNotBlank(thumbnail.getCachedFileId())) {
-                mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), thumbnail.getCachedFileId()));
+                mediaMessageService.sendPhoto(new SendPhoto(String.valueOf(message.getChatId()), new InputFile(thumbnail.getCachedFileId())));
             } else {
                 executor.execute(() -> {
                     SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileSize(), thumbnail.getFileName(), thumbnail.getMimeType());
                     try {
-                        SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(message.getChatId(), tempFile.getFile()));
+                        SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(String.valueOf(message.getChatId()), new InputFile(tempFile.getFile())));
                         thumbnail.setCachedFileId(sendFileResult.getFileId());
                         commandStateService.setState(message.getChatId(), RenameCommandNames.SET_THUMBNAIL_COMMAND, thumbnail);
                     } finally {
@@ -84,6 +85,6 @@ public class ViewThumbnailCommand implements BotCommand {
 
     private void thumbNotFound(Message message) {
         Locale locale = userService.getLocaleOrDefault(message.getFrom().getId());
-        messageService.sendMessage(new SendMessage(message.getChatId(), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_NOT_FOUND, locale)));
+        messageService.sendMessage(new SendMessage(String.valueOf(message.getChatId()), localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_NOT_FOUND, locale)));
     }
 }
