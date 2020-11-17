@@ -148,7 +148,7 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
                 commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
                 thumbFile = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
-                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile, true);
+                fileManager.forceDownloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile);
             }
             SendDocument.SendDocumentBuilder documentBuilder = SendDocument.builder().chatId(String.valueOf(queueItem.getUserId()))
                     .document(new InputFile(file.getFile(), finalFileName));
@@ -163,13 +163,13 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
         @Override
         public void cancel() {
-            if (!fileManager.cancelDownloading(queueItem.getFile().getFileId()) && file != null) {
+            if (!fileManager.cancelDownloading(queueItem.getFile().getFileId(), queueItem.getSize()) && file != null) {
                 file.smartDelete();
             }
             if (file != null && !fileManager.cancelUploading(file.getAbsolutePath())) {
                 file.smartDelete();
             }
-            if (!fileManager.cancelDownloading(queueItem.getThumb().getFileId()) && thumbFile != null) {
+            if (!fileManager.cancelDownloading(queueItem.getThumb().getFileId(), 1) && thumbFile != null) {
                 thumbFile.smartDelete();
             }
         }
