@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
+import ru.gadjini.telegram.smart.bot.commons.dao.QueueDao;
 import ru.gadjini.telegram.smart.bot.commons.dao.QueueDaoDelegate;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
@@ -62,8 +63,10 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
     public List<RenameQueueItem> poll(SmartExecutorService.JobWeight weight, int limit) {
         return jdbcTemplate.query(
                 "WITH r AS (\n" +
-                        "    UPDATE rename_queue SET status = 1, last_run_at = now(), started_at = COALESCE(started_at, now()), attempts = attempts + 1 WHERE id IN (SELECT id FROM rename_queue WHERE status = 0 AND attempts < ? " +
-                        "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ? ORDER BY created_at LIMIT ?) RETURNING *\n" +
+                        "    UPDATE rename_queue SET " + QueueDao.POLL_UPDATE_LIST + " WHERE id IN " +
+                        "(SELECT id FROM rename_queue qu WHERE status = 0 AND attempts < ? " +
+                        "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") +
+                        " ? " + QueueDao.POLL_ORDER_BY + " LIMIT ?) RETURNING *\n" +
                         ")\n" +
                         "SELECT *, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
                         "FROM r",
