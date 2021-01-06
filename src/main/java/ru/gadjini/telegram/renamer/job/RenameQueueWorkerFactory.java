@@ -5,102 +5,58 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
-import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
-import ru.gadjini.telegram.renamer.service.rename.RenameMessageBuilder;
+import ru.gadjini.telegram.renamer.service.progress.ProgressBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
-import ru.gadjini.telegram.smart.bot.commons.model.Progress;
-import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
-import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
-import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
+import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloader;
+import ru.gadjini.telegram.smart.bot.commons.service.file.FileUploadService;
 import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
-import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorker;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorkerFactory;
 import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
 
-import java.util.Locale;
-
 @Component
 public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueItem> {
 
-    private FileManager fileManager;
+    private FileDownloader fileManager;
 
     private TempFileService tempFileService;
 
     private FormatService formatService;
 
-    private MediaMessageService mediaMessageService;
-
-    private LocalisationService localisationService;
-
-    private InlineKeyboardService inlineKeyboardService;
-
     private CommandStateService commandStateService;
-
-    private UserService userService;
 
     private ThumbService thumbService;
 
-    private RenameMessageBuilder renameMessageBuilder;
+    private FileUploadService fileUploadService;
+
+    private ProgressBuilder progressBuilder;
 
     @Autowired
-    public RenameQueueWorkerFactory(FileManager fileManager, TempFileService tempFileService, FormatService formatService,
-                                    @Qualifier("forceMedia") MediaMessageService mediaMessageService,
-                                    LocalisationService localisationService, InlineKeyboardService inlineKeyboardService,
-                                    CommandStateService commandStateService, UserService userService, ThumbService thumbService,
-                                    RenameMessageBuilder renameMessageBuilder) {
+    public RenameQueueWorkerFactory(FileDownloader fileManager, TempFileService tempFileService, FormatService formatService,
+                                    CommandStateService commandStateService, ThumbService thumbService,
+                                    FileUploadService fileUploadService, ProgressBuilder progressBuilder) {
         this.fileManager = fileManager;
         this.tempFileService = tempFileService;
         this.formatService = formatService;
-        this.mediaMessageService = mediaMessageService;
-        this.localisationService = localisationService;
-        this.inlineKeyboardService = inlineKeyboardService;
         this.commandStateService = commandStateService;
-        this.userService = userService;
         this.thumbService = thumbService;
-        this.renameMessageBuilder = renameMessageBuilder;
+        this.fileUploadService = fileUploadService;
+        this.progressBuilder = progressBuilder;
     }
 
     @Override
     public QueueWorker createWorker(RenameQueueItem queueItem) {
         return new RenameQueueWorker(queueItem);
-    }
-
-    private Progress progress(long chatId, RenameQueueItem queueItem, RenameStep renameStep, RenameStep nextStep) {
-        Locale locale = userService.getLocaleOrDefault((int) chatId);
-        Progress progress = new Progress();
-        progress.setLocale(locale.getLanguage());
-        progress.setChatId(chatId);
-        progress.setProgressMessageId(queueItem.getProgressMessageId());
-        progress.setProgressMessage(renameMessageBuilder.buildMessage(queueItem, renameStep, locale));
-        if (nextStep != null) {
-            String calculated = localisationService.getMessage(MessagesProperties.MESSAGE_CALCULATED, locale);
-            String completionMessage = renameMessageBuilder.buildMessage(queueItem, nextStep, locale);
-            String seconds = localisationService.getMessage(MessagesProperties.SECOND_PART, locale);
-            if (nextStep == RenameStep.RENAMING) {
-                progress.setAfterProgressCompletionMessage(String.format(completionMessage, 50, "7 " + seconds));
-            } else {
-                progress.setAfterProgressCompletionMessage(String.format(completionMessage, 0, calculated, calculated));
-            }
-            if (nextStep != RenameStep.COMPLETED) {
-                progress.setAfterProgressCompletionReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale));
-            }
-        }
-        progress.setProgressReplyMarkup(inlineKeyboardService.getRenameProcessingKeyboard(queueItem.getId(), locale));
-
-        return progress;
     }
 
     private String createNewFileName(String fileName, String ext) {
@@ -123,8 +79,6 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
         private final RenameQueueItem queueItem;
 
-        private volatile SmartTempFile file;
-
         private volatile SmartTempFile thumbFile;
 
         private RenameQueueWorker(RenameQueueItem queueItem) {
@@ -139,9 +93,7 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
             String ext = formatService.getExt(queueItem.getFile().getFileName(), queueItem.getFile().getMimeType());
             String finalFileName = createNewFileName(queueItem.getNewFileName(), ext);
 
-            file = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, ext);
-            fileManager.downloadFileByFileId(queueItem.getFile().getFileId(), queueItem.getFile().getSize(),
-                    progress(queueItem.getUserId(), queueItem, RenameStep.DOWNLOADING, RenameStep.RENAMING), file);
+            SmartTempFile file = queueItem.getDownloadedFile();
 
             if (queueItem.getThumb() != null) {
                 thumbFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize(), queueItem.getThumb().getFileName(), queueItem.getThumb().getMimeType());
@@ -155,29 +107,30 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
             if (thumbFile != null) {
                 documentBuilder.thumb(new InputFile(thumbFile.getFile()));
             }
-            mediaMessageService.sendDocument(documentBuilder.replyToMessageId(queueItem.getReplyToMessageId()).build(),
-                    progress(queueItem.getUserId(), queueItem, RenameStep.UPLOADING, RenameStep.COMPLETED));
+            fileUploadService.createUpload(queueItem.getUserId(), SendDocument.PATH, documentBuilder.replyToMessageId(queueItem.getReplyToMessageId()).build(),
+                    progressBuilder.progress(queueItem.getUserId(), queueItem, RenameStep.UPLOADING, RenameStep.COMPLETED), queueItem.getId());
 
             LOGGER.debug("Finish({}, {}, {})", queueItem.getUserId(), size, queueItem.getNewFileName());
         }
 
         @Override
-        public void cancel() {
-            if (!fileManager.cancelDownloading(queueItem.getFile().getFileId(), queueItem.getSize()) && file != null) {
-                file.smartDelete();
+        public void cancel(boolean canceledByUser) {
+            if (canceledByUser) {
+                SmartTempFile downloadedFile = queueItem.getDownloadedFile();
+                if (downloadedFile != null) {
+                    downloadedFile.smartDelete();
+                }
             }
-            if (file != null && !fileManager.cancelUploading(file.getAbsolutePath())) {
-                file.smartDelete();
-            }
-            if (!fileManager.cancelDownloading(queueItem.getThumb().getFileId(), 1) && thumbFile != null) {
+            if (thumbFile != null) {
                 thumbFile.smartDelete();
             }
         }
 
         @Override
         public void finish() {
-            if (file != null) {
-                file.smartDelete();
+            SmartTempFile downloadedFile = queueItem.getDownloadedFile();
+            if (downloadedFile != null) {
+                downloadedFile.smartDelete();
             }
             if (thumbFile != null) {
                 thumbFile.smartDelete();

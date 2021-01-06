@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.gadjini.telegram.renamer.service.image.ImageConvertDevice;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
-import ru.gadjini.telegram.smart.bot.commons.service.file.FileManager;
+import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloader;
 import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 
@@ -14,7 +14,7 @@ public class ThumbService {
 
     public static final String TAG = "thumb";
 
-    private FileManager fileManager;
+    private FileDownloader fileDownloader;
 
     private TempFileService tempFileService;
 
@@ -23,9 +23,9 @@ public class ThumbService {
     private ImageConvertDevice convertDevice;
 
     @Autowired
-    public ThumbService(FileManager fileManager, TempFileService tempFileService,
+    public ThumbService(FileDownloader fileDownloader, TempFileService tempFileService,
                         FormatService formatService, ImageConvertDevice convertDevice) {
-        this.fileManager = fileManager;
+        this.fileDownloader = fileDownloader;
         this.tempFileService = tempFileService;
         this.formatService = formatService;
         this.convertDevice = convertDevice;
@@ -35,7 +35,7 @@ public class ThumbService {
         String ext = formatService.getExt(fileName, mimeType);
         SmartTempFile thumb = tempFileService.createTempFile(chatId, fileId, TAG, ext);
         try {
-            fileManager.downloadFileByFileId(fileId, fileSize, thumb);
+            fileDownloader.downloadFileByFileId(fileId, fileSize, thumb, false);
             SmartTempFile out = tempFileService.createTempFile(chatId, fileId, TAG, Format.JPG.getExt());
             try {
                 convertDevice.convertToThumb(thumb.getAbsolutePath(), out.getAbsolutePath());

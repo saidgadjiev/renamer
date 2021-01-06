@@ -1,35 +1,43 @@
 package ru.gadjini.telegram.renamer.dao;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.dao.QueueDao;
-import ru.gadjini.telegram.smart.bot.commons.dao.QueueDaoDelegate;
+import ru.gadjini.telegram.smart.bot.commons.dao.WorkQueueDaoDelegate;
+import ru.gadjini.telegram.smart.bot.commons.domain.DownloadQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
-import ru.gadjini.telegram.smart.bot.commons.property.QueueProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
+import ru.gadjini.telegram.smart.bot.commons.utils.JdbcUtils;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Repository
-public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
+public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
 
     private FileLimitProperties fileLimitProperties;
 
     private JdbcTemplate jdbcTemplate;
 
-    private QueueProperties queueProperties;
+    private ObjectMapper objectMapper;
 
     @Autowired
-    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate, QueueProperties queueProperties) {
+    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.fileLimitProperties = fileLimitProperties;
         this.jdbcTemplate = jdbcTemplate;
-        this.queueProperties = queueProperties;
+        this.objectMapper = objectMapper;
     }
 
     public int create(RenameQueueItem renameQueueItem) {
@@ -64,16 +72,16 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
         return jdbcTemplate.query(
                 "WITH r AS (\n" +
                         "    UPDATE rename_queue SET " + QueueDao.POLL_UPDATE_LIST + " WHERE id IN " +
-                        "(SELECT id FROM rename_queue qu WHERE status = 0 AND attempts < ? " +
-                        "AND (file).size " + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") +
-                        " ? " + QueueDao.POLL_ORDER_BY + " LIMIT ?) RETURNING *\n" +
+                        "(SELECT id FROM rename_queue qu WHERE status = 0 " +
+                        "AND (file).size " + getSign(weight) + " ? " +
+                        " AND NOT EXISTS(SELECT 1 FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer_id = qu.id AND dq.producer = 'rename_queue' AND dq.status != 3) "
+                        + QueueDao.POLL_ORDER_BY + " LIMIT " + limit + ") RETURNING *\n" +
                         ")\n" +
-                        "SELECT *, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type\n" +
+                        "SELECT *, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type,\n" +
+                        "(SELECT json_agg(ds) FROM (SELECT * FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer = 'rename_queue' AND dq.producer_id = r.id) as ds) as downloads\n" +
                         "FROM r",
                 ps -> {
-                    ps.setLong(1, queueProperties.getMaxAttempts());
-                    ps.setLong(2, fileLimitProperties.getLightFileMaxWeight());
-                    ps.setInt(3, limit);
+                    ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
                 },
                 (rs, rowNum) -> map(rs)
         );
@@ -84,7 +92,7 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
                 "SELECT COALESCE(queue_position, 1) as queue_position\n" +
                         "FROM (SELECT id, row_number() over (ORDER BY created_at) AS queue_position\n" +
                         "      FROM rename_queue \n" +
-                        "      WHERE status = 0 AND (file).size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        "      WHERE status = 0 AND (file).size" + getSign(weight) + " ?\n" +
                         ") as file_q\n" +
                         "WHERE id = ?",
                 ps -> {
@@ -123,7 +131,7 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
                         "FROM rename_queue f\n" +
                         "         LEFT JOIN (SELECT id, row_number() over (ORDER BY created_at) as queue_position\n" +
                         "                     FROM rename_queue\n" +
-                        "      WHERE status = 0 AND (file).size" + (weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">") + " ?\n" +
+                        "      WHERE status = 0 AND (file).size" + getSign(weight) + " ?\n" +
                         ") queue_place ON f.id = queue_place.id\n" +
                         "WHERE f.id = ?\n",
                 ps -> {
@@ -179,11 +187,43 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
     }
 
     @Override
+    public long countReadToComplete(SmartExecutorService.JobWeight weight) {
+        return jdbcTemplate.query(
+                "SELECT COUNT(id) as cnt\n" +
+                        "        FROM rename_queue qu WHERE qu.status = 0 AND (file).size " + getSign(weight) + " ?" +
+                        " AND NOT EXISTS(select 1 FROM " + DownloadQueueItem.NAME + " dq where dq.producer = 'rename_queue' AND dq.producer_id = qu.id AND dq.status != 3) ",
+                ps -> ps.setLong(1, fileLimitProperties.getLightFileMaxWeight()),
+                (rs) -> rs.next() ? rs.getLong("cnt") : 0
+        );
+    }
+
+    @Override
+    public long countProcessing(SmartExecutorService.JobWeight weight) {
+        return jdbcTemplate.query(
+                "SELECT COUNT(id) as cnt\n" +
+                        "        FROM rename_queue qu WHERE qu.status = 1 AND (file).size " + getSign(weight) + " ?",
+                ps -> ps.setLong(1, fileLimitProperties.getLightFileMaxWeight()),
+                (rs) -> rs.next() ? rs.getLong("cnt") : 0
+        );
+    }
+
+    @Override
+    public String getProducerName() {
+        return getQueueName();
+    }
+
+    @Override
     public String getQueueName() {
         return RenameQueueItem.TYPE;
     }
 
+    private String getSign(SmartExecutorService.JobWeight weight) {
+        return weight.equals(SmartExecutorService.JobWeight.LIGHT) ? "<=" : ">";
+    }
+
     private RenameQueueItem map(ResultSet resultSet) throws SQLException {
+        Set<String> columns = JdbcUtils.getColumnNames(resultSet.getMetaData());
+
         RenameQueueItem item = new RenameQueueItem();
         item.setId(resultSet.getInt(RenameQueueItem.ID));
 
@@ -210,6 +250,26 @@ public class RenameQueueDao implements QueueDaoDelegate<RenameQueueItem> {
         item.setUserId(resultSet.getInt(RenameQueueItem.USER_ID));
 
         item.setQueuePosition(resultSet.getInt(RenameQueueItem.QUEUE_POSITION));
+        if (columns.contains(RenameQueueItem.DOWNLOADS)) {
+            PGobject downloadsArr = (PGobject) resultSet.getObject(RenameQueueItem.DOWNLOADS);
+            if (downloadsArr != null) {
+                try {
+                    List<Map<String, Object>> values = objectMapper.readValue(downloadsArr.getValue(), new TypeReference<>() {
+                    });
+                    List<DownloadQueueItem> downloadingQueueItems = new ArrayList<>();
+                    for (Map<String, Object> value : values) {
+                        DownloadQueueItem downloadingQueueItem = new DownloadQueueItem();
+                        downloadingQueueItem.setFilePath((String) value.get(DownloadQueueItem.FILE_PATH));
+                        downloadingQueueItem.setFile(objectMapper.convertValue(value.get(DownloadQueueItem.FILE), TgFile.class));
+                        downloadingQueueItem.setDeleteParentDir((Boolean) value.get(DownloadQueueItem.DELETE_PARENT_DIR));
+                        downloadingQueueItems.add(downloadingQueueItem);
+                    }
+                    item.setDownload(downloadingQueueItems.isEmpty() ? null : downloadingQueueItems.get(0));
+                } catch (JsonProcessingException e) {
+                    throw new SQLException(e);
+                }
+            }
+        }
 
         return item;
     }

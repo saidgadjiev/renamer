@@ -58,8 +58,7 @@ public class RenameMessageBuilder implements UpdateQueryStatusCommandMessageProv
         }
     }
 
-    @Override
-    public String getWaitingMessage(QueueItem queueItem, Locale locale) {
+    public String getUpdateStatusMessage(QueueItem queueItem, Locale locale) {
         return buildMessage((RenameQueueItem) queueItem, RenameStep.WAITING, locale);
     }
 }

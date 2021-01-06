@@ -9,8 +9,6 @@ public class MessagesProperties {
 
     public static final String GO_BACK_COMMAND_NAME = "go.back.command.name";
 
-    public static final String SECOND_PART = "second.part";
-
     public static final String MESSAGE_RENAME_FILE = "message.rename.file";
 
     public static final String MESSAGE_NEW_FILE_NAME = "message.new.file.name";
@@ -40,8 +38,6 @@ public class MessagesProperties {
     public static final String MESSAGE_UPLOADING_STEP = "message.uploading.step";
 
     public static final String ICON_CHECK = "icon.check";
-
-    public static final String MESSAGE_CALCULATED = "message.calculated";
 
     public static final String SET_THUMB_COMMAND_DESCRIPTION = "set.thumb.command.description";
 

@@ -16,11 +16,12 @@ import java.util.TimeZone;
 
 @EnableConfigurationProperties(value = {
         BotProperties.class,
-        FloodControlProperties.class,
-        QueueProperties.class,
         BotApiProperties.class,
         FileLimitProperties.class,
-
+        DownloadFloodControlProperties.class,
+        UploadFloodControlProperties.class,
+        MediaLimitProperties.class,
+        FileManagerProperties.class
 })
 @EnableScheduling
 @SpringBootApplication

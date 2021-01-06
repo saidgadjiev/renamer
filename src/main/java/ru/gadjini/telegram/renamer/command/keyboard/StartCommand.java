@@ -14,7 +14,7 @@ import ru.gadjini.telegram.renamer.service.rename.RenameService;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
-import ru.gadjini.telegram.smart.bot.commons.job.QueueJob;
+import ru.gadjini.telegram.smart.bot.commons.job.WorkQueueJob;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.model.TgMessage;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
@@ -42,12 +42,12 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     private MessageMediaService fileService;
 
-    private QueueJob queueJob;
+    private WorkQueueJob queueJob;
 
     @Autowired
     public StartCommand(LocalisationService localisationService, CommandStateService commandStateService,
                         @Qualifier("messageLimits") MessageService messageService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
-                        UserService userService, RenameService renameService, MessageMediaService fileService, QueueJob queueJob) {
+                        UserService userService, RenameService renameService, MessageMediaService fileService, WorkQueueJob queueJob) {
         this.commandStateService = commandStateService;
         this.localisationService = localisationService;
         this.messageService = messageService;

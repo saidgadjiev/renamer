@@ -14,10 +14,12 @@ import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
+import ru.gadjini.telegram.renamer.service.progress.ProgressBuilder;
 import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
+import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloadService;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
@@ -35,6 +37,8 @@ public class RenameService {
 
     private MessageService messageService;
 
+    private FileDownloadService fileDownloadService;
+
     private MediaMessageService mediaMessageService;
 
     private QueueService queueService;
@@ -47,25 +51,30 @@ public class RenameService {
 
     private UserService userService;
 
-    private RenameMessageBuilder messageBuilder;
+    private RenameMessageBuilder renameMessageBuilder;
+
+    private ProgressBuilder progressBuilder;
 
     @Autowired
     public RenameService(FormatService formatService,
                          @Qualifier("messageLimits") MessageService messageService,
-                         @Qualifier("mediaLimits") MediaMessageService mediaMessageService, QueueService queueService,
-                         RenameQueueService renameQueueService,
+                         FileDownloadService fileDownloadService, @Qualifier("mediaLimits") MediaMessageService mediaMessageService,
+                         QueueService queueService, RenameQueueService renameQueueService,
                          InlineKeyboardService inlineKeyboardService,
                          CommandStateService commandStateService, UserService userService,
-                         RenameMessageBuilder messageBuilder) {
+                         RenameMessageBuilder renameMessageBuilder,
+                         ProgressBuilder progressBuilder) {
         this.formatService = formatService;
         this.messageService = messageService;
+        this.fileDownloadService = fileDownloadService;
         this.mediaMessageService = mediaMessageService;
         this.queueService = queueService;
         this.renameQueueService = renameQueueService;
         this.inlineKeyboardService = inlineKeyboardService;
         this.commandStateService = commandStateService;
         this.userService = userService;
-        this.messageBuilder = messageBuilder;
+        this.renameMessageBuilder = renameMessageBuilder;
+        this.progressBuilder = progressBuilder;
     }
 
     public void rename(int userId, RenameState renameState, String newFileName) {
@@ -80,13 +89,19 @@ public class RenameService {
         sendStartRenamingMessage(item, message -> {
             item.setProgressMessageId(message.getMessageId());
             queueService.setProgressMessageId(item.getId(), message.getMessageId());
-         });
+            createDownload(item);
+        });
+    }
+
+    private void createDownload(RenameQueueItem queueItem) {
+        queueItem.getFile().setProgress(progressBuilder.progress(queueItem.getUserId(), queueItem, RenameStep.DOWNLOADING, RenameStep.WAITING));
+        fileDownloadService.createDownload(queueItem.getFile(), queueItem.getId(), queueItem.getUserId());
     }
 
     private void sendStartRenamingMessage(RenameQueueItem queueItem, Consumer<Message> callback) {
         Locale locale = userService.getLocaleOrDefault(queueItem.getUserId());
 
-        String message = messageBuilder.buildMessage(queueItem, RenameStep.WAITING, locale);
+        String message = renameMessageBuilder.buildMessage(queueItem, RenameStep.WAITING, locale);
         messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(queueItem.getUserId())).text(message)
                 .parseMode(ParseMode.HTML)
                 .replyMarkup(inlineKeyboardService.getRenameWaitingKeyboard(queueItem.getId(), locale)).build(), callback);
