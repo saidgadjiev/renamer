@@ -125,16 +125,5 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
                 thumbFile.smartDelete();
             }
         }
-
-        @Override
-        public void finish() {
-            SmartTempFile downloadedFile = queueItem.getDownloadedFile();
-            if (downloadedFile != null) {
-                downloadedFile.smartDelete();
-            }
-            if (thumbFile != null) {
-                thumbFile.smartDelete();
-            }
-        }
     }
 }

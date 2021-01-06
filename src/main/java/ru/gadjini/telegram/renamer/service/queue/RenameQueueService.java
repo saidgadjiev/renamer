@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.gadjini.telegram.renamer.command.keyboard.RenameState;
 import ru.gadjini.telegram.renamer.dao.RenameQueueDao;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
-import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
@@ -31,21 +30,10 @@ public class RenameQueueService {
         renameQueueItem.setNewFileName(newFileName);
         renameQueueItem.setReplyToMessageId(renameState.getReplyMessageId());
 
-        TgFile file = new TgFile();
-        file.setFileName(renameState.getFile().getFileName());
-        file.setFileId(renameState.getFile().getFileId());
-        file.setMimeType(renameState.getFile().getMimeType());
-        file.setSize(renameState.getFile().getFileSize());
-        file.setThumb(renameState.getFile().getThumb());
-        renameQueueItem.setFile(file);
+        renameQueueItem.setFile(renameState.getFile().toTgFile());
 
         if (thumbnail != null) {
-            TgFile thumb = new TgFile();
-            thumb.setFileId(thumbnail.getFileId());
-            thumb.setFileName(thumbnail.getFileName());
-            thumb.setMimeType(thumbnail.getMimeType());
-            thumb.setSize(thumbnail.getFileSize());
-            renameQueueItem.setThumb(thumb);
+            renameQueueItem.setThumb(thumbnail.toTgFile());
         }
 
         renameQueueItem.setStatus(RenameQueueItem.Status.WAITING);

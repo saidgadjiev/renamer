@@ -23,7 +23,7 @@ import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloadService;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MediaMessageService;
 import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
-import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueService;
+import ru.gadjini.telegram.smart.bot.commons.service.queue.WorkQueueService;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -41,7 +41,7 @@ public class RenameService {
 
     private MediaMessageService mediaMessageService;
 
-    private QueueService queueService;
+    private WorkQueueService queueService;
 
     private RenameQueueService renameQueueService;
 
@@ -59,7 +59,7 @@ public class RenameService {
     public RenameService(FormatService formatService,
                          @Qualifier("messageLimits") MessageService messageService,
                          FileDownloadService fileDownloadService, @Qualifier("mediaLimits") MediaMessageService mediaMessageService,
-                         QueueService queueService, RenameQueueService renameQueueService,
+                         WorkQueueService queueService, RenameQueueService renameQueueService,
                          InlineKeyboardService inlineKeyboardService,
                          CommandStateService commandStateService, UserService userService,
                          RenameMessageBuilder renameMessageBuilder,
@@ -94,7 +94,7 @@ public class RenameService {
     }
 
     private void createDownload(RenameQueueItem queueItem) {
-        queueItem.getFile().setProgress(progressBuilder.progress(queueItem.getUserId(), queueItem, RenameStep.DOWNLOADING, RenameStep.WAITING));
+        queueItem.getFile().setProgress(progressBuilder.progress(queueItem.getUserId(), queueItem, RenameStep.DOWNLOADING, RenameStep.RENAMING));
         fileDownloadService.createDownload(queueItem.getFile(), queueItem.getId(), queueItem.getUserId());
     }
 
