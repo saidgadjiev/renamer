@@ -77,7 +77,19 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
                         " AND NOT EXISTS(SELECT 1 FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer_id = qu.id AND dq.producer = 'rename_queue' AND dq.status != 3) "
                         + QueueDao.POLL_ORDER_BY + " LIMIT " + limit + ") RETURNING *\n" +
                         ")\n" +
-                        "SELECT *, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type,\n" +
+                        "SELECT id,\n" +
+                        "       created_at,\n" +
+                        "       user_id,\n" +
+                        "       new_file_name,\n" +
+                        "       reply_to_message_id,\n" +
+                        "       status,\n" +
+                        "       progress_message_id,\n" +
+                        "       started_at,\n" +
+                        "       last_run_at,\n" +
+                        "       completed_at,\n" +
+                        "       exception,\n" +
+                        "       suppress_user_exceptions,\n" +
+                        "       attempts, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type,\n" +
                         "(SELECT json_agg(ds) FROM (SELECT * FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer = 'rename_queue' AND dq.producer_id = r.id) as ds) as downloads\n" +
                         "FROM r",
                 ps -> {
@@ -127,7 +139,19 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
             return null;
         }
         return jdbcTemplate.query(
-                "SELECT f.*, (f.file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type, COALESCE(queue_place.queue_position, 1) as queue_position\n" +
+                "SELECT f.id,\n" +
+                        "       f.created_at,\n" +
+                        "       f.user_id,\n" +
+                        "       f.new_file_name,\n" +
+                        "       f.reply_to_message_id,\n" +
+                        "       f.status,\n" +
+                        "       f.progress_message_id,\n" +
+                        "       f.started_at,\n" +
+                        "       f.last_run_at,\n" +
+                        "       f.completed_at,\n" +
+                        "       f.exception,\n" +
+                        "       f.suppress_user_exceptions,\n" +
+                        "       f.attempts, (f.file).*, (f.thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type, COALESCE(queue_place.queue_position, 1) as queue_position\n" +
                         "FROM rename_queue f\n" +
                         "         LEFT JOIN (SELECT id, row_number() over (ORDER BY created_at) as queue_position\n" +
                         "                     FROM rename_queue\n" +
