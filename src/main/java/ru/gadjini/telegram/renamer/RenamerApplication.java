@@ -21,7 +21,8 @@ import java.util.TimeZone;
         DownloadFloodControlProperties.class,
         UploadFloodControlProperties.class,
         MediaLimitProperties.class,
-        FileManagerProperties.class
+        FileManagerProperties.class,
+        WebhookProperties.class
 })
 @EnableScheduling
 @SpringBootApplication
