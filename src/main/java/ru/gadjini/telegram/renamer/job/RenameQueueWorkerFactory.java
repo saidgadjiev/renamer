@@ -100,7 +100,7 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
                 commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
                 thumbFile = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
-                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile);
+                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile, false);
             }
             SendDocument.SendDocumentBuilder documentBuilder = SendDocument.builder().chatId(String.valueOf(queueItem.getUserId()))
                     .document(new InputFile(file.getFile(), finalFileName));
