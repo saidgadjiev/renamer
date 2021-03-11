@@ -5,8 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.postgresql.util.PGobject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -30,8 +28,6 @@ import java.util.Set;
 
 @Repository
 public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(RenameQueueDao.class);
 
     private FileLimitProperties fileLimitProperties;
 
