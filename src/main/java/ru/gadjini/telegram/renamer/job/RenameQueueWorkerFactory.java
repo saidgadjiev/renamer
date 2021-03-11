@@ -96,6 +96,9 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
             SmartTempFile file = queueItem.getDownloadedFile();
 
+            if (file == null) {
+                LOGGER.debug("Null file({})", queueItem.getUserId());
+            }
             if (queueItem.getThumb() != null) {
                 SmartTempFile downloadedFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize(), queueItem.getThumb().getFileName(), queueItem.getThumb().getMimeType());
                 thumbFile = tempFileService.moveTo(downloadedFile, FileTarget.UPLOAD);
