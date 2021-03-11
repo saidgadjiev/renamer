@@ -1,6 +1,5 @@
 package ru.gadjini.telegram.renamer.service.keyboard;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -9,9 +8,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
 import ru.gadjini.telegram.smart.bot.commons.service.keyboard.ReplyKeyboardService;
+import ru.gadjini.telegram.smart.bot.commons.service.keyboard.SmartReplyKeyboardService;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -20,9 +18,12 @@ public class ReplyKeyboardServiceImpl implements RenamerReplyKeyboardService {
 
     private LocalisationService localisationService;
 
+    private SmartReplyKeyboardService smartReplyKeyboardService;
+
     @Autowired
-    public ReplyKeyboardServiceImpl(LocalisationService localisationService) {
+    public ReplyKeyboardServiceImpl(LocalisationService localisationService, SmartReplyKeyboardService smartReplyKeyboardService) {
         this.localisationService = localisationService;
+        this.smartReplyKeyboardService = smartReplyKeyboardService;
     }
 
     @Override
@@ -32,21 +33,12 @@ public class ReplyKeyboardServiceImpl implements RenamerReplyKeyboardService {
 
     @Override
     public ReplyKeyboardMarkup smartFileFeatureKeyboard(long chatId, Locale locale) {
-        return ReplyKeyboardService.replyKeyboardMarkup();
+        return smartReplyKeyboardService.smartFileFeatureKeyboard(locale);
     }
 
     @Override
     public ReplyKeyboardMarkup languageKeyboard(long chatId, Locale locale) {
-        ReplyKeyboardMarkup replyKeyboardMarkup = ReplyKeyboardService.replyKeyboardMarkup();
-
-        List<String> languages = new ArrayList<>();
-        for (Locale l : localisationService.getSupportedLocales()) {
-            languages.add(StringUtils.capitalize(l.getDisplayLanguage(l)));
-        }
-        replyKeyboardMarkup.getKeyboard().add(ReplyKeyboardService.keyboardRow(languages.toArray(new String[0])));
-        replyKeyboardMarkup.getKeyboard().add(ReplyKeyboardService.keyboardRow(localisationService.getMessage(MessagesProperties.GO_BACK_COMMAND_NAME, locale)));
-
-        return replyKeyboardMarkup;
+        return smartReplyKeyboardService.languageKeyboard(locale);
     }
 
     @Override
