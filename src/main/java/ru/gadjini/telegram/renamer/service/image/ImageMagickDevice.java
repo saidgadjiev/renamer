@@ -2,6 +2,7 @@ package ru.gadjini.telegram.renamer.service.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.gadjini.telegram.smart.bot.commons.exception.ProcessException;
 import ru.gadjini.telegram.smart.bot.commons.service.ProcessExecutor;
 
 import java.util.ArrayList;
@@ -20,17 +21,29 @@ public class ImageMagickDevice implements ImageConvertDevice, ImageIdentifyDevic
 
     @Override
     public void convert(String in, String out, String... options) {
-        processExecutor.execute(getCommand(in, out, options));
+        try {
+            processExecutor.execute(getCommand(in, out, options));
+        } catch (InterruptedException e) {
+            throw new ProcessException(e);
+        }
     }
 
     @Override
     public void convertToThumb(String in, String out) {
-        processExecutor.execute(getThumbCommand(in, out));
+        try {
+            processExecutor.execute(getThumbCommand(in, out));
+        } catch (InterruptedException e) {
+            throw new ProcessException(e);
+        }
     }
 
     @Override
     public String getSize(String in) {
-        return processExecutor.executeWithResult(getSizeCommand(in));
+        try {
+            return processExecutor.executeWithResult(getSizeCommand(in));
+        } catch (InterruptedException e) {
+            throw new ProcessException(e);
+        }
     }
 
     private String[] getThumbCommand(String in, String out) {

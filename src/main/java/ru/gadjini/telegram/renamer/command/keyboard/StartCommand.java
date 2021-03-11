@@ -97,7 +97,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
             messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(message.getChatId()))
                     .text(localisationService.getMessage(MessagesProperties.MESSAGE_NEW_FILE_NAME, locale))
                     .parseMode(ParseMode.HTML).build());
-            queueJob.removeAndCancelCurrentTasks(message.getChatId());
+            queueJob.cancelCurrentTasks(message.getChatId());
             commandStateService.setState(message.getChatId(), getHistoryName(), renameState);
         } else if (message.hasText()) {
             RenameState renameState = commandStateService.getState(message.getChatId(), getHistoryName(), true, RenameState.class);

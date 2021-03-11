@@ -22,6 +22,7 @@ public class RenameQueueItem extends WorkQueueItem {
     private TgFile thumb;
 
     private String newFileName;
+
     private DownloadQueueItem download;
 
     public TgFile getFile() {

@@ -117,4 +117,24 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
+
+
+    <profiles>
+        <profile>
+            <id>dev-primary</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <spring.profiles.active>dev-primary</spring.profiles.active>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>prod-primary</id>
+            <properties>
+                <spring.profiles.active>prod-primary</spring.profiles.active>
+            </properties>
+        </profile>
+    </profiles>
 </project>

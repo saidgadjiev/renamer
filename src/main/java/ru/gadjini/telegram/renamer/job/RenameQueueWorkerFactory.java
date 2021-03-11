@@ -14,10 +14,11 @@ import ru.gadjini.telegram.renamer.service.progress.ProgressBuilder;
 import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
-import ru.gadjini.telegram.smart.bot.commons.service.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloader;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileUploadService;
+import ru.gadjini.telegram.smart.bot.commons.service.file.temp.FileTarget;
+import ru.gadjini.telegram.smart.bot.commons.service.file.temp.TempFileService;
 import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorker;
@@ -96,11 +97,15 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
             SmartTempFile file = queueItem.getDownloadedFile();
 
             if (queueItem.getThumb() != null) {
-                thumbFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize(), queueItem.getThumb().getFileName(), queueItem.getThumb().getMimeType());
+                SmartTempFile downloadedFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize(), queueItem.getThumb().getFileName(), queueItem.getThumb().getMimeType());
+                thumbFile = tempFileService.moveTo(downloadedFile, FileTarget.UPLOAD);
+
                 commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
-                thumbFile = tempFileService.createTempFile(queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
-                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, thumbFile, false);
+                SmartTempFile downloadedFile = tempFileService.createTempFile(FileTarget.TEMP, queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
+                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, downloadedFile, false);
+
+                thumbFile = tempFileService.moveTo(downloadedFile, FileTarget.UPLOAD);
             }
             SendDocument.SendDocumentBuilder documentBuilder = SendDocument.builder().chatId(String.valueOf(queueItem.getUserId()))
                     .document(new InputFile(file.getFile(), finalFileName));
