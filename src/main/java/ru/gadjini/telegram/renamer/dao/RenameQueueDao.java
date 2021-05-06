@@ -81,7 +81,7 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
                         "(SELECT id FROM rename_queue qu WHERE status = 0 " +
                         "AND (file).size " + getSign(weight) + " ? " +
                         " AND NOT EXISTS(SELECT 1 FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer_id = qu.id AND dq.producer = 'rename_queue' AND dq.status != 3) "
-                        + QueueDao.POLL_ORDER_BY + " LIMIT " + limit + ") RETURNING *\n" +
+                        + " ORDER BY qu.id LIMIT " + limit + ") RETURNING *\n" +
                         ")\n" +
                         "SELECT id,\n" +
                         "       created_at,\n" +
