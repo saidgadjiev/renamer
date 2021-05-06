@@ -1,12 +1,12 @@
 package ru.gadjini.telegram.renamer.command.bot;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
+import ru.gadjini.telegram.smart.bot.commons.annotation.TgMessageLimitsControl;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.service.LocalisationService;
@@ -28,7 +28,7 @@ public class DeleteThumbnailCommand implements BotCommand {
     private UserService userService;
 
     @Autowired
-    public DeleteThumbnailCommand(CommandStateService commandStateService, @Qualifier("messageLimits") MessageService messageService,
+    public DeleteThumbnailCommand(CommandStateService commandStateService, @TgMessageLimitsControl MessageService messageService,
                                   LocalisationService localisationService, UserService userService) {
         this.commandStateService = commandStateService;
         this.messageService = messageService;

@@ -3,7 +3,6 @@ package ru.gadjini.telegram.renamer.command.bot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -11,6 +10,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
+import ru.gadjini.telegram.smart.bot.commons.annotation.KeyboardHolder;
+import ru.gadjini.telegram.smart.bot.commons.annotation.TgMessageLimitsControl;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
@@ -47,8 +48,8 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
 
     @Autowired
     public SetThumbnailCommand(CommandStateService commandStateService,
-                               @Qualifier("messageLimits") MessageService messageService, LocalisationService localisationService,
-                               UserService userService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
+                               @TgMessageLimitsControl MessageService messageService, LocalisationService localisationService,
+                               UserService userService, @KeyboardHolder RenamerReplyKeyboardService replyKeyboardService,
                                MessageMediaService fileService) {
         this.commandStateService = commandStateService;
         this.messageService = messageService;

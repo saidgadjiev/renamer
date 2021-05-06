@@ -10,13 +10,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
-import ru.gadjini.telegram.smart.bot.commons.configuration.SmartBotConfiguration;
 import ru.gadjini.telegram.smart.bot.commons.dao.QueueDao;
 import ru.gadjini.telegram.smart.bot.commons.dao.WorkQueueDaoDelegate;
 import ru.gadjini.telegram.smart.bot.commons.domain.DownloadQueueItem;
 import ru.gadjini.telegram.smart.bot.commons.domain.QueueItem;
 import ru.gadjini.telegram.smart.bot.commons.domain.TgFile;
 import ru.gadjini.telegram.smart.bot.commons.property.FileLimitProperties;
+import ru.gadjini.telegram.smart.bot.commons.property.ServerProperties;
 import ru.gadjini.telegram.smart.bot.commons.service.concurrent.SmartExecutorService;
 import ru.gadjini.telegram.smart.bot.commons.utils.JdbcUtils;
 
@@ -35,11 +35,15 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
 
     private ObjectMapper objectMapper;
 
+    private ServerProperties serverProperties;
+
     @Autowired
-    public RenameQueueDao(FileLimitProperties fileLimitProperties, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public RenameQueueDao(FileLimitProperties fileLimitProperties,
+                          JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, ServerProperties serverProperties) {
         this.fileLimitProperties = fileLimitProperties;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.serverProperties = serverProperties;
     }
 
     public int create(RenameQueueItem renameQueueItem) {
@@ -73,7 +77,7 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
     public List<RenameQueueItem> poll(SmartExecutorService.JobWeight weight, int limit) {
         return jdbcTemplate.query(
                 "WITH r AS (\n" +
-                        "    UPDATE rename_queue SET " + QueueDao.getUpdateList(SmartBotConfiguration.PRIMARY_SERVER_NUMBER) + " WHERE id IN " +
+                        "    UPDATE rename_queue SET " + QueueDao.getUpdateList(serverProperties.getNumber()) + " WHERE id IN " +
                         "(SELECT id FROM rename_queue qu WHERE status = 0 " +
                         "AND (file).size " + getSign(weight) + " ? " +
                         " AND NOT EXISTS(SELECT 1 FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer_id = qu.id AND dq.producer = 'rename_queue' AND dq.status != 3) "
@@ -95,9 +99,7 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
                         "       attempts, 1 as queue_position, (file).*, (thumb).file_id as th_file_id, (thumb).file_name as th_file_name, (thumb).mime_type as th_mime_type,\n" +
                         "(SELECT json_agg(ds) FROM (SELECT * FROM " + DownloadQueueItem.NAME + " dq WHERE dq.producer = 'rename_queue' AND dq.producer_id = r.id) as ds) as downloads\n" +
                         "FROM r",
-                ps -> {
-                    ps.setLong(1, fileLimitProperties.getLightFileMaxWeight());
-                },
+                ps -> ps.setLong(1, fileLimitProperties.getLightFileMaxWeight()),
                 (rs, rowNum) -> map(rs)
         );
     }

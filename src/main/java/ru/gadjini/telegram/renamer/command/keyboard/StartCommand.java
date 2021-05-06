@@ -1,7 +1,6 @@
 package ru.gadjini.telegram.renamer.command.keyboard;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -11,6 +10,9 @@ import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.service.keyboard.RenamerReplyKeyboardService;
 import ru.gadjini.telegram.renamer.service.rename.RenameService;
+import ru.gadjini.telegram.smart.bot.commons.annotation.CommandStart;
+import ru.gadjini.telegram.smart.bot.commons.annotation.KeyboardHolder;
+import ru.gadjini.telegram.smart.bot.commons.annotation.TgMessageLimitsControl;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.command.api.NavigableBotCommand;
 import ru.gadjini.telegram.smart.bot.commons.exception.UserException;
@@ -26,6 +28,7 @@ import ru.gadjini.telegram.smart.bot.commons.service.message.MessageService;
 import java.util.Locale;
 
 @Component
+@CommandStart
 public class StartCommand implements NavigableBotCommand, BotCommand {
 
     private CommandStateService commandStateService;
@@ -46,7 +49,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
 
     @Autowired
     public StartCommand(LocalisationService localisationService, CommandStateService commandStateService,
-                        @Qualifier("messageLimits") MessageService messageService, @Qualifier("curr") RenamerReplyKeyboardService replyKeyboardService,
+                        @TgMessageLimitsControl MessageService messageService, @KeyboardHolder RenamerReplyKeyboardService replyKeyboardService,
                         UserService userService, RenameService renameService, MessageMediaService fileService, WorkQueueJob queueJob) {
         this.commandStateService = commandStateService;
         this.localisationService = localisationService;

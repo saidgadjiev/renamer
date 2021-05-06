@@ -2,19 +2,20 @@ package ru.gadjini.telegram.renamer.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.gadjini.telegram.renamer.filter.*;
 import ru.gadjini.telegram.smart.bot.commons.filter.*;
+import ru.gadjini.telegram.smart.bot.commons.filter.subscription.ChannelSubscriptionFilter;
 
 @Configuration
 public class BotConfiguration {
 
     @Bean
-    public BotFilter botFilter(RenamerBotFilter any2AnyBotFilter,
-                               UpdateFilter updateFilter, StartCommandFilter startCommandFilter,
+    public BotFilter botFilter(UpdateFilter updateFilter, UserSynchronizedFilter userSynchronizedFilter,
+                               StartCommandFilter startCommandFilter, TechWorkFilter techWorkFilter,
                                MediaFilter mediaFilter, LastActivityFilter activityFilter,
-                               SubscriptionFilter subscriptionFilter) {
-        updateFilter.setNext(mediaFilter).setNext(startCommandFilter).setNext(subscriptionFilter)
-                .setNext(activityFilter).setNext(any2AnyBotFilter);
+                               ChannelSubscriptionFilter subscriptionFilter, UpdatesHandlerFilter updatesHandler) {
+        updateFilter.setNext(userSynchronizedFilter).setNext(activityFilter).setNext(mediaFilter)
+                .setNext(startCommandFilter).setNext(subscriptionFilter)
+                .setNext(techWorkFilter).setNext(updatesHandler);
         return updateFilter;
     }
 }

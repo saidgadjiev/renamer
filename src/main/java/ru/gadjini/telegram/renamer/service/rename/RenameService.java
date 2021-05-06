@@ -16,6 +16,7 @@ import ru.gadjini.telegram.renamer.domain.RenameQueueItem;
 import ru.gadjini.telegram.renamer.service.keyboard.InlineKeyboardService;
 import ru.gadjini.telegram.renamer.service.progress.ProgressBuilder;
 import ru.gadjini.telegram.renamer.service.queue.RenameQueueService;
+import ru.gadjini.telegram.smart.bot.commons.annotation.TgMessageLimitsControl;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
 import ru.gadjini.telegram.smart.bot.commons.service.UserService;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
@@ -57,7 +58,7 @@ public class RenameService {
 
     @Autowired
     public RenameService(FormatService formatService,
-                         @Qualifier("messageLimits") MessageService messageService,
+                         @TgMessageLimitsControl MessageService messageService,
                          FileDownloadService fileDownloadService, @Qualifier("mediaLimits") MediaMessageService mediaMessageService,
                          WorkQueueService queueService, RenameQueueService renameQueueService,
                          InlineKeyboardService inlineKeyboardService,

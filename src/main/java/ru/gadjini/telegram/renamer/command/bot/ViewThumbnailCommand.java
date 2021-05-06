@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.gadjini.telegram.renamer.common.MessagesProperties;
 import ru.gadjini.telegram.renamer.common.RenameCommandNames;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
+import ru.gadjini.telegram.smart.bot.commons.annotation.TgMessageLimitsControl;
 import ru.gadjini.telegram.smart.bot.commons.command.api.BotCommand;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.model.MessageMedia;
@@ -42,7 +43,7 @@ public class ViewThumbnailCommand implements BotCommand {
     private ThreadPoolTaskExecutor executor;
 
     @Autowired
-    public ViewThumbnailCommand(@Qualifier("messageLimits") MessageService messageService,
+    public ViewThumbnailCommand(@TgMessageLimitsControl MessageService messageService,
                                 @Qualifier("mediaLimits") MediaMessageService mediaMessageService, LocalisationService localisationService,
                                 UserService userService, ThumbService thumbService, CommandStateService commandStateService,
                                 @Qualifier("commonTaskExecutor") ThreadPoolTaskExecutor executor) {
@@ -63,7 +64,7 @@ public class ViewThumbnailCommand implements BotCommand {
                 mediaMessageService.sendPhoto(new SendPhoto(String.valueOf(message.getChatId()), new InputFile(thumbnail.getCachedFileId())));
             } else {
                 executor.execute(() -> {
-                    SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileSize(), thumbnail.getFileName(), thumbnail.getMimeType());
+                    SmartTempFile tempFile = thumbService.convertToThumb(message.getChatId(), thumbnail.getFileId(), thumbnail.getFileSize());
                     try {
                         SendFileResult sendFileResult = mediaMessageService.sendPhoto(new SendPhoto(String.valueOf(message.getChatId()), new InputFile(tempFile.getFile())));
                         thumbnail.setCachedFileId(sendFileResult.getFileId());

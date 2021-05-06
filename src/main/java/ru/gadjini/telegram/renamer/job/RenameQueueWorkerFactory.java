@@ -17,20 +17,17 @@ import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloader;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileUploadService;
-import ru.gadjini.telegram.smart.bot.commons.service.file.temp.FileTarget;
-import ru.gadjini.telegram.smart.bot.commons.service.file.temp.TempFileService;
-import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorker;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorkerFactory;
 import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
 
+import java.io.File;
+
 @Component
 public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueItem> {
 
     private FileDownloader fileManager;
-
-    private TempFileService tempFileService;
 
     private FormatService formatService;
 
@@ -43,11 +40,10 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
     private ProgressBuilder progressBuilder;
 
     @Autowired
-    public RenameQueueWorkerFactory(FileDownloader fileManager, TempFileService tempFileService, FormatService formatService,
+    public RenameQueueWorkerFactory(FileDownloader fileManager, FormatService formatService,
                                     CommandStateService commandStateService, ThumbService thumbService,
                                     FileUploadService fileUploadService, ProgressBuilder progressBuilder) {
         this.fileManager = fileManager;
-        this.tempFileService = tempFileService;
         this.formatService = formatService;
         this.commandStateService = commandStateService;
         this.thumbService = thumbService;
@@ -76,8 +72,6 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
         private final Logger LOGGER = LoggerFactory.getLogger(RenameQueueWorker.class);
 
-        private static final String TAG = "rename";
-
         private final RenameQueueItem queueItem;
 
         private volatile SmartTempFile thumbFile;
@@ -96,19 +90,16 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
             SmartTempFile file = queueItem.getDownloadedFile();
 
-            if (file == null) {
-                LOGGER.debug("Null file({})", queueItem.getUserId());
-            }
             if (queueItem.getThumb() != null) {
-                SmartTempFile downloadedFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize(), queueItem.getThumb().getFileName(), queueItem.getThumb().getMimeType());
-                thumbFile = tempFileService.moveTo(downloadedFile, FileTarget.UPLOAD);
+                thumbFile = thumbService.convertToThumb(queueItem.getUserId(), queueItem.getThumb().getFileId(), queueItem.getThumb().getSize());
 
                 commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
-                SmartTempFile downloadedFile = tempFileService.createTempFile(FileTarget.TEMP, queueItem.getUserId(), queueItem.getFile().getFileId(), TAG, Format.JPG.getExt());
-                fileManager.downloadFileByFileId(queueItem.getFile().getThumb(), 1, downloadedFile, false);
-
-                thumbFile = tempFileService.moveTo(downloadedFile, FileTarget.UPLOAD);
+                thumbFile = new SmartTempFile(
+                        new File(fileManager.downloadFileByFileId(queueItem.getFile().getThumb(),
+                                queueItem.getFile().getThumbSize(), false)),
+                        false
+                );
             }
             SendDocument.SendDocumentBuilder documentBuilder = SendDocument.builder().chatId(String.valueOf(queueItem.getUserId()))
                     .document(new InputFile(file.getFile(), finalFileName));
