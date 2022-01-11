@@ -15,11 +15,7 @@ import ru.gadjini.telegram.renamer.service.rename.RenameStep;
 import ru.gadjini.telegram.renamer.service.thumb.ThumbService;
 import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
-import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloader;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileUploadService;
-import ru.gadjini.telegram.smart.bot.commons.service.file.temp.FileTarget;
-import ru.gadjini.telegram.smart.bot.commons.service.file.temp.TempFileService;
-import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorker;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorkerFactory;
@@ -28,17 +24,11 @@ import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
 @Component
 public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueItem> {
 
-    private static final String TAG = "thumb";
-
     private FormatService formatService;
 
     private CommandStateService commandStateService;
 
     private ThumbService thumbService;
-
-    private TempFileService tempFileService;
-
-    private FileDownloader fileDownloader;
 
     private FileUploadService fileUploadService;
 
@@ -47,13 +37,10 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
     @Autowired
     public RenameQueueWorkerFactory(FormatService formatService,
                                     CommandStateService commandStateService, ThumbService thumbService,
-                                    TempFileService tempFileService, FileDownloader fileDownloader,
                                     FileUploadService fileUploadService, ProgressBuilder progressBuilder) {
         this.formatService = formatService;
         this.commandStateService = commandStateService;
         this.thumbService = thumbService;
-        this.tempFileService = tempFileService;
-        this.fileDownloader = fileDownloader;
         this.fileUploadService = fileUploadService;
         this.progressBuilder = progressBuilder;
     }
