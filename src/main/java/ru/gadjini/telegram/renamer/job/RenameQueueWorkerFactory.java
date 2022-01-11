@@ -17,17 +17,18 @@ import ru.gadjini.telegram.smart.bot.commons.io.SmartTempFile;
 import ru.gadjini.telegram.smart.bot.commons.service.command.CommandStateService;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileDownloader;
 import ru.gadjini.telegram.smart.bot.commons.service.file.FileUploadService;
+import ru.gadjini.telegram.smart.bot.commons.service.file.temp.FileTarget;
+import ru.gadjini.telegram.smart.bot.commons.service.file.temp.TempFileService;
+import ru.gadjini.telegram.smart.bot.commons.service.format.Format;
 import ru.gadjini.telegram.smart.bot.commons.service.format.FormatService;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorker;
 import ru.gadjini.telegram.smart.bot.commons.service.queue.QueueWorkerFactory;
 import ru.gadjini.telegram.smart.bot.commons.utils.MemoryUtils;
 
-import java.io.File;
-
 @Component
 public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueItem> {
 
-    private FileDownloader fileManager;
+    private static final String TAG = "thumb";
 
     private FormatService formatService;
 
@@ -35,18 +36,24 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
     private ThumbService thumbService;
 
+    private TempFileService tempFileService;
+
+    private FileDownloader fileDownloader;
+
     private FileUploadService fileUploadService;
 
     private ProgressBuilder progressBuilder;
 
     @Autowired
-    public RenameQueueWorkerFactory(FileDownloader fileManager, FormatService formatService,
+    public RenameQueueWorkerFactory(FormatService formatService,
                                     CommandStateService commandStateService, ThumbService thumbService,
+                                    TempFileService tempFileService, FileDownloader fileDownloader,
                                     FileUploadService fileUploadService, ProgressBuilder progressBuilder) {
-        this.fileManager = fileManager;
         this.formatService = formatService;
         this.commandStateService = commandStateService;
         this.thumbService = thumbService;
+        this.tempFileService = tempFileService;
+        this.fileDownloader = fileDownloader;
         this.fileUploadService = fileUploadService;
         this.progressBuilder = progressBuilder;
     }
@@ -95,11 +102,7 @@ public class RenameQueueWorkerFactory implements QueueWorkerFactory<RenameQueueI
 
                 commandStateService.deleteState(queueItem.getUserId(), RenameCommandNames.SET_THUMBNAIL_COMMAND);
             } else if (StringUtils.isNotBlank(queueItem.getFile().getThumb())) {
-                thumbFile = new SmartTempFile(
-                        new File(fileManager.downloadFileByFileId(queueItem.getFile().getThumb(),
-                                queueItem.getFile().getThumbSize(), false)),
-                        false
-                );
+                thumbFile = thumbService.downloadThumb(queueItem.getUserId(), queueItem.getFile().getThumb(), queueItem.getFile().getThumbSize());
             }
             SendDocument.SendDocumentBuilder documentBuilder = SendDocument.builder().chatId(String.valueOf(queueItem.getUserId()))
                     .document(new InputFile(file.getFile(), finalFileName));

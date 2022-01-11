@@ -54,7 +54,7 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
                     PreparedStatement ps = con.prepareStatement("INSERT INTO rename_queue(user_id, file, thumb, new_file_name, reply_to_message_id, status) " +
                             "VALUES (?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
 
-                    ps.setInt(1, renameQueueItem.getUserId());
+                    ps.setLong(1, renameQueueItem.getUserId());
                     ps.setObject(2, renameQueueItem.getFile().sqlObject());
                     if (renameQueueItem.getThumb() != null) {
                         ps.setObject(3, renameQueueItem.getThumb().sqlObject());
@@ -176,13 +176,6 @@ public class RenameQueueDao implements WorkQueueDaoDelegate<RenameQueueItem> {
                     return null;
                 }
         );
-    }
-
-    @Override
-    public List<RenameQueueItem> deleteAndGetProcessingOrWaitingByUserId(int userId) {
-        return jdbcTemplate.query("WITH r as(DELETE FROM rename_queue WHERE user_id = ? RETURNING *) SELECT id, (file).size, server FROM r",
-                ps -> ps.setInt(1, userId),
-                (rs, num) -> mapDeleteItem(rs));
     }
 
     @Override

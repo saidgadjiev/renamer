@@ -115,7 +115,7 @@ public class SetThumbnailCommand implements BotCommand, NavigableBotCommand {
         return true;
     }
 
-    private void validate(int userId, MessageMedia any2AnyFile, Locale locale) {
+    private void validate(long userId, MessageMedia any2AnyFile, Locale locale) {
         if (any2AnyFile.getFormat() == null) {
             LOGGER.debug("Null format({}, {})", userId, any2AnyFile);
             throw new UserException(localisationService.getMessage(MessagesProperties.MESSAGE_THUMB_INVALID_FILE, locale));

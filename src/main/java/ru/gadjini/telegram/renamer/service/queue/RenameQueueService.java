@@ -24,7 +24,7 @@ public class RenameQueueService {
     }
 
     @Transactional
-    public RenameQueueItem createItem(int userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
+    public RenameQueueItem createItem(long userId, RenameState renameState, MessageMedia thumbnail, String newFileName) {
         RenameQueueItem renameQueueItem = new RenameQueueItem();
         renameQueueItem.setUserId(userId);
         renameQueueItem.setNewFileName(newFileName);
@@ -46,5 +46,9 @@ public class RenameQueueService {
         renameQueueItem.setId(id);
 
         return renameQueueItem;
+    }
+
+    public RenameQueueItem getById(int id) {
+        return renameQueueDao.getById(id);
     }
 }

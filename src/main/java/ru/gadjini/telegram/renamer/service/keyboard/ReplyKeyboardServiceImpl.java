@@ -32,6 +32,11 @@ public class ReplyKeyboardServiceImpl implements RenamerReplyKeyboardService {
     }
 
     @Override
+    public ReplyKeyboardMarkup goBackKeyboard(long l, Locale locale) {
+        return smartReplyKeyboardService.goBackKeyboard(l, locale);
+    }
+
+    @Override
     public ReplyKeyboardMarkup smartFileFeatureKeyboard(long chatId, Locale locale) {
         return smartReplyKeyboardService.smartFileFeatureKeyboard(locale);
     }

@@ -35,8 +35,13 @@ public class CurrReplyKeyboard implements RenamerReplyKeyboardService, ReplyKeyb
     }
 
     @Override
+    public ReplyKeyboardMarkup goBackKeyboard(long l, Locale locale) {
+        return setCurrentKeyboard(l, keyboardService.goBackKeyboard(l, locale));
+    }
+
+    @Override
     public ReplyKeyboardMarkup smartFileFeatureKeyboard(long chatId, Locale locale) {
-        return keyboardService.smartFileFeatureKeyboard(chatId, locale);
+        return setCurrentKeyboard(chatId, keyboardService.smartFileFeatureKeyboard(chatId, locale));
     }
 
     @Override

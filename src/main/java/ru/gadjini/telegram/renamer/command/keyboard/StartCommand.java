@@ -71,7 +71,7 @@ public class StartCommand implements NavigableBotCommand, BotCommand {
         return RenameCommandNames.START_COMMAND;
     }
 
-    private void processMessage0(long chatId, int userId) {
+    private void processMessage0(long chatId, long userId) {
         Locale locale = userService.getLocaleOrDefault(userId);
         messageService.sendMessage(SendMessage.builder().chatId(String.valueOf(chatId))
                 .text(localisationService.getMessage(MessagesProperties.MESSAGE_RENAME_FILE, locale))

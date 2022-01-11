@@ -137,9 +137,16 @@
             <version>2.7</version>
         </dependency>
 
+
         <dependency>
             <groupId>ru.gadjini.telegram</groupId>
             <artifactId>smart-work-bot-commons</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ru.gadjini.telegram</groupId>
+            <artifactId>smart-bot-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
@@ -147,7 +154,6 @@
     <profiles>
         <profile>
             <id>dev-primary</id>
-
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -155,13 +161,15 @@
                 <spring.profiles.active>dev-primary</spring.profiles.active>
             </properties>
         </profile>
+
         <profile>
             <id>prod-primary</id>
-
             <properties>
                 <spring.profiles.active>prod-primary</spring.profiles.active>
             </properties>
         </profile>
+
     </profiles>
+
 
 </project>
